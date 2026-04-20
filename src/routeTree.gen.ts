@@ -9,38 +9,161 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppTeacherRouteImport } from './routes/_app/teacher'
+import { Route as AppSystemRouteImport } from './routes/_app/system'
+import { Route as AppSecurityRouteImport } from './routes/_app/security'
+import { Route as AppParentRouteImport } from './routes/_app/parent'
+import { Route as AppDelegateRouteImport } from './routes/_app/delegate'
+import { Route as AppChildModeRouteImport } from './routes/_app/child-mode'
+import { Route as AppAdminRouteImport } from './routes/_app/admin'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppTeacherRoute = AppTeacherRouteImport.update({
+  id: '/teacher',
+  path: '/teacher',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSystemRoute = AppSystemRouteImport.update({
+  id: '/system',
+  path: '/system',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSecurityRoute = AppSecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppParentRoute = AppParentRouteImport.update({
+  id: '/parent',
+  path: '/parent',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDelegateRoute = AppDelegateRouteImport.update({
+  id: '/delegate',
+  path: '/delegate',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChildModeRoute = AppChildModeRouteImport.update({
+  id: '/child-mode',
+  path: '/child-mode',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/admin': typeof AppAdminRoute
+  '/child-mode': typeof AppChildModeRoute
+  '/delegate': typeof AppDelegateRoute
+  '/parent': typeof AppParentRoute
+  '/security': typeof AppSecurityRoute
+  '/system': typeof AppSystemRoute
+  '/teacher': typeof AppTeacherRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/admin': typeof AppAdminRoute
+  '/child-mode': typeof AppChildModeRoute
+  '/delegate': typeof AppDelegateRoute
+  '/parent': typeof AppParentRoute
+  '/security': typeof AppSecurityRoute
+  '/system': typeof AppSystemRoute
+  '/teacher': typeof AppTeacherRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_app/admin': typeof AppAdminRoute
+  '/_app/child-mode': typeof AppChildModeRoute
+  '/_app/delegate': typeof AppDelegateRoute
+  '/_app/parent': typeof AppParentRoute
+  '/_app/security': typeof AppSecurityRoute
+  '/_app/system': typeof AppSystemRoute
+  '/_app/teacher': typeof AppTeacherRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/admin'
+    | '/child-mode'
+    | '/delegate'
+    | '/parent'
+    | '/security'
+    | '/system'
+    | '/teacher'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/admin'
+    | '/child-mode'
+    | '/delegate'
+    | '/parent'
+    | '/security'
+    | '/system'
+    | '/teacher'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/_app/admin'
+    | '/_app/child-mode'
+    | '/_app/delegate'
+    | '/_app/parent'
+    | '/_app/security'
+    | '/_app/system'
+    | '/_app/teacher'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +171,84 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/teacher': {
+      id: '/_app/teacher'
+      path: '/teacher'
+      fullPath: '/teacher'
+      preLoaderRoute: typeof AppTeacherRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/system': {
+      id: '/_app/system'
+      path: '/system'
+      fullPath: '/system'
+      preLoaderRoute: typeof AppSystemRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/security': {
+      id: '/_app/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof AppSecurityRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/parent': {
+      id: '/_app/parent'
+      path: '/parent'
+      fullPath: '/parent'
+      preLoaderRoute: typeof AppParentRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/delegate': {
+      id: '/_app/delegate'
+      path: '/delegate'
+      fullPath: '/delegate'
+      preLoaderRoute: typeof AppDelegateRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/child-mode': {
+      id: '/_app/child-mode'
+      path: '/child-mode'
+      fullPath: '/child-mode'
+      preLoaderRoute: typeof AppChildModeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
+  AppChildModeRoute: typeof AppChildModeRoute
+  AppDelegateRoute: typeof AppDelegateRoute
+  AppParentRoute: typeof AppParentRoute
+  AppSecurityRoute: typeof AppSecurityRoute
+  AppSystemRoute: typeof AppSystemRoute
+  AppTeacherRoute: typeof AppTeacherRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
+  AppChildModeRoute: AppChildModeRoute,
+  AppDelegateRoute: AppDelegateRoute,
+  AppParentRoute: AppParentRoute,
+  AppSecurityRoute: AppSecurityRoute,
+  AppSystemRoute: AppSystemRoute,
+  AppTeacherRoute: AppTeacherRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
