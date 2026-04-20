@@ -27,13 +27,14 @@ function TeacherDashboard() {
   const [lastVerdict, setLastVerdict] = useState<{ ok: boolean; msg: string } | null>(null);
 
   useEffect(() => {
-    if (!profile?.school_id) return;
-    void dispatch(fetchSchoolTokens(profile.school_id));
+    const sid = profile?.school_id;
+    if (!sid) return;
+    void dispatch(fetchSchoolTokens(sid));
     (async () => {
       const { data } = await supabase
         .from("children")
         .select("id, full_name, class_name")
-        .eq("school_id", profile.school_id)
+        .eq("school_id", sid)
         .order("full_name");
       setChildren((data ?? []) as Child[]);
     })();
