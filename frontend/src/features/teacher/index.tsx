@@ -419,8 +419,35 @@ export default function TeacherDashboard() {
     <div className="min-h-screen">
       <ConsoleHeader title="Teacher Console" subtitle="Teacher" />
       <main className="mx-auto max-w-7xl space-y-6 px-6 py-8">
-        <div className="grid gap-6 lg:grid-cols-2">
-          <section className="panel p-5">
+        <div className="space-y-6">
+          <div className="rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 p-6 text-white">
+            <h1 className="text-xl font-semibold">Good morning, {user?.full_name?.split(" ")[0]}!</h1>
+            <p className="text-sm opacity-90">{children.length} students across {Array.from(new Set(children.map(c=>c.class_name))).length} classes today.</p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="panel p-4">
+              <div className="text-sm text-muted-foreground">Total Students</div>
+              <div className="mt-3 text-2xl font-semibold">{children.length}</div>
+            </div>
+            <div className="panel p-4">
+              <div className="text-sm text-muted-foreground">Present Today</div>
+              <div className="mt-3 text-2xl font-semibold">{Object.values(present).filter(Boolean).length}</div>
+              <div className="text-xs text-success mt-1">{children.length ? `${Math.round((Object.values(present).filter(Boolean).length / children.length) * 100)}% rate` : "0% rate"}</div>
+            </div>
+            <div className="panel p-4">
+              <div className="text-sm text-muted-foreground">Active Assignments</div>
+              <div className="mt-3 text-2xl font-semibold">{homeworkList.length}</div>
+            </div>
+            <div className="panel p-4">
+              <div className="text-sm text-muted-foreground">Active Quizzes</div>
+              <div className="mt-3 text-2xl font-semibold">{quizzes.length}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          <section className="panel p-5 lg:col-span-2">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold">Attendance · Today</h2>
@@ -467,7 +494,7 @@ export default function TeacherDashboard() {
             </button>
           </section>
 
-          <section className="space-y-4">
+          <section className="space-y-4 lg:col-span-1">
             <QRScanner onScan={handleScan} />
             <div className="panel p-4">
               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">

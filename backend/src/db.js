@@ -7,8 +7,8 @@ dotenv.config({ path: fileURLToPath(new URL('../../.env', import.meta.url)) });
 const pool = mysql.createPool({
   host: process.env.MYSQL_HOST || '127.0.0.1',
   port: Number(process.env.MYSQL_PORT || 3306),
-  user: process.env.MYSQL_USER || 'root',
-  password: process.env.MYSQL_PASSWORD || '',
+  user: process.env.MYSQL_USER || 'guardian_link_app',
+  password: process.env.MYSQL_PASSWORD || 'system',
   database: process.env.MYSQL_DATABASE || 'guardian_link_local',
   waitForConnections: true,
   connectionLimit: 10,

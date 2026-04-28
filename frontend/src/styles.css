@@ -44,6 +44,7 @@
 
 :root {
   --radius: 12px;
+  --sw: 260px;
 
   /* Brand colors */
   --navy: #0e2a52;
@@ -411,7 +412,7 @@
    SIDEBAR
 ═══════════════════════════════════════ */
 .sidebar {
-  width: var(--sw);
+  width: var(--sw, 260px);
   background: #ffffff;
   border-right: 1px solid var(--border);
   min-height: 100vh;
@@ -552,7 +553,13 @@
 /* ═══════════════════════════════════════
    MAIN
 ═══════════════════════════════════════ */
-.main { margin-left: var(--sw); flex: 1; min-height: 100vh; background: var(--bg); }
+.main {
+  margin-left: var(--sw, 260px);
+  width: calc(100% - var(--sw, 260px));
+  flex: 1;
+  min-height: 100vh;
+  background: var(--bg);
+}
 
 .topbar {
   background: var(--card);

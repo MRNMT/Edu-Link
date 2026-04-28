@@ -437,6 +437,35 @@ async function ensureOperationsSchema() {
     ) ENGINE=InnoDB`
   );
 
+  await query(
+    `CREATE TABLE IF NOT EXISTS parent_teacher_messages (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      school_id BIGINT UNSIGNED NOT NULL,
+      parent_id BIGINT UNSIGNED NOT NULL,
+      teacher_id BIGINT UNSIGNED NOT NULL,
+      sender_id BIGINT UNSIGNED NOT NULL,
+      message TEXT NOT NULL,
+      read_at DATETIME NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      KEY idx_ptm_parent_teacher_created (parent_id, teacher_id, created_at),
+      KEY idx_ptm_teacher_created (teacher_id, created_at),
+      KEY idx_ptm_sender_created (sender_id, created_at),
+      CONSTRAINT fk_ptm_school
+        FOREIGN KEY (school_id) REFERENCES schools(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT fk_ptm_parent
+        FOREIGN KEY (parent_id) REFERENCES users(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT fk_ptm_teacher
+        FOREIGN KEY (teacher_id) REFERENCES users(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT fk_ptm_sender
+        FOREIGN KEY (sender_id) REFERENCES users(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB`
+  );
+
   const usersColumns = await query(
     `SELECT COLUMN_NAME
      FROM information_schema.COLUMNS
@@ -2585,6 +2614,7 @@ app.post('/api/ops/parent/homework/:homeworkId/read', authRequired, async (req, 
 
 app.get('/api/ops/parent/notifications', authRequired, async (req, res) => {
   try {
+    if (!requireRoles(req, res, ['parent', 'delegate'])) return;
     const rows = await query(
       `SELECT id, category, title, body, data, read_at, created_at
        FROM notifications
@@ -2594,6 +2624,212 @@ app.get('/api/ops/parent/notifications', authRequired, async (req, res) => {
       [req.user.sub]
     );
     return res.json(rows);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/ops/parent/attendance', authRequired, async (req, res) => {
+  try {
+    if (!requireRoles(req, res, ['parent'])) return;
+
+    const rows = await query(
+      `SELECT c.id AS child_id,
+              c.full_name,
+              c.class_name,
+              c.grade,
+              a.attendance_date,
+              a.status,
+              a.reason,
+              a.marked_by
+       FROM parent_children pc
+       INNER JOIN children c ON c.id = pc.child_id
+       LEFT JOIN attendance a ON a.child_id = c.id AND a.school_id = ?
+       WHERE pc.parent_id = ?
+       ORDER BY c.full_name ASC, a.attendance_date DESC
+       LIMIT 400`,
+      [req.user.school_id, req.user.sub]
+    );
+
+    return res.json(rows);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/ops/parent/teachers', authRequired, async (req, res) => {
+  try {
+    if (!requireRoles(req, res, ['parent'])) return;
+
+    const rows = await query(
+      `SELECT DISTINCT t.id, t.full_name, t.email, c.class_name
+       FROM parent_children pc
+       INNER JOIN children c ON c.id = pc.child_id
+       INNER JOIN users t ON t.school_id = c.school_id AND t.role = 'teacher'
+       WHERE pc.parent_id = ?
+         AND (
+           EXISTS (
+             SELECT 1
+             FROM homework h
+             WHERE h.school_id = c.school_id AND h.class_name = c.class_name AND h.teacher_id = t.id
+           )
+           OR EXISTS (
+             SELECT 1
+             FROM class_alerts ca
+             WHERE ca.school_id = c.school_id
+               AND ca.class_name = c.class_name
+               AND ca.created_by_user_id = t.id
+           )
+         )
+       ORDER BY t.full_name ASC`,
+      [req.user.sub]
+    );
+
+    return res.json(rows);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/ops/parent/messages', authRequired, async (req, res) => {
+  try {
+    if (!requireRoles(req, res, ['parent'])) return;
+    const teacherId = Number(req.query.teacherId || 0);
+    if (!teacherId) {
+      return res.status(400).json({ error: 'teacherId is required' });
+    }
+
+    const allowed = await query(
+      `SELECT COUNT(*) AS count
+       FROM parent_children pc
+       INNER JOIN children c ON c.id = pc.child_id
+       WHERE pc.parent_id = ?
+         AND (
+           EXISTS (
+             SELECT 1
+             FROM homework h
+             WHERE h.school_id = c.school_id AND h.class_name = c.class_name AND h.teacher_id = ?
+           )
+           OR EXISTS (
+             SELECT 1
+             FROM class_alerts ca
+             WHERE ca.school_id = c.school_id
+               AND ca.class_name = c.class_name
+               AND ca.created_by_user_id = ?
+           )
+         )`,
+      [req.user.sub, teacherId, teacherId]
+    );
+
+    if (Number(allowed[0]?.count ?? 0) === 0) {
+      return res.status(403).json({ error: 'Teacher does not appear linked to your children classes' });
+    }
+
+    const rows = await query(
+      `SELECT id, parent_id, teacher_id, sender_id, message, read_at, created_at
+       FROM parent_teacher_messages
+       WHERE parent_id = ? AND teacher_id = ?
+       ORDER BY created_at ASC
+       LIMIT 300`,
+      [req.user.sub, teacherId]
+    );
+
+    return res.json(rows);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/ops/parent/messages', authRequired, async (req, res) => {
+  try {
+    if (!requireRoles(req, res, ['parent'])) return;
+    const teacherId = Number(req.body.teacher_id || 0);
+    const message = String(req.body.message || '').trim();
+
+    if (!teacherId || !message) {
+      return res.status(400).json({ error: 'teacher_id and message are required' });
+    }
+
+    const allowed = await query(
+      `SELECT COUNT(*) AS count
+       FROM parent_children pc
+       INNER JOIN children c ON c.id = pc.child_id
+       WHERE pc.parent_id = ?
+         AND (
+           EXISTS (
+             SELECT 1
+             FROM homework h
+             WHERE h.school_id = c.school_id AND h.class_name = c.class_name AND h.teacher_id = ?
+           )
+           OR EXISTS (
+             SELECT 1
+             FROM class_alerts ca
+             WHERE ca.school_id = c.school_id
+               AND ca.class_name = c.class_name
+               AND ca.created_by_user_id = ?
+           )
+         )`,
+      [req.user.sub, teacherId, teacherId]
+    );
+
+    if (Number(allowed[0]?.count ?? 0) === 0) {
+      return res.status(403).json({ error: 'Teacher does not appear linked to your children classes' });
+    }
+
+    const result = await query(
+      `INSERT INTO parent_teacher_messages (school_id, parent_id, teacher_id, sender_id, message)
+       VALUES (?, ?, ?, ?, ?)`,
+      [req.user.school_id, req.user.sub, teacherId, req.user.sub, message]
+    );
+
+    await query(
+      `INSERT INTO notifications (school_id, user_id, category, title, body, data)
+       VALUES (?, ?, 'system', ?, ?, ?)`,
+      [
+        req.user.school_id,
+        teacherId,
+        'New parent message',
+        message,
+        JSON.stringify({ parent_id: req.user.sub, message_id: result.insertId }),
+      ]
+    );
+
+    return res.status(201).json({ id: result.insertId, teacher_id: teacherId, message });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/ops/parent/link-child', authRequired, async (req, res) => {
+  try {
+    if (!requireRoles(req, res, ['parent'])) return;
+    const childId = Number(req.body.child_id || 0);
+    const relationship = String(req.body.relationship || 'parent').trim() || 'parent';
+
+    if (!childId) {
+      return res.status(400).json({ error: 'child_id is required' });
+    }
+
+    const childRows = await query(
+      `SELECT id, school_id, full_name
+       FROM children
+       WHERE id = ? AND school_id = ?
+       LIMIT 1`,
+      [childId, req.user.school_id]
+    );
+
+    if (childRows.length === 0) {
+      return res.status(404).json({ error: 'Child not found in your school' });
+    }
+
+    await query(
+      `INSERT INTO parent_children (parent_id, child_id, relationship)
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE relationship = VALUES(relationship)`,
+      [req.user.sub, childId, relationship]
+    );
+
+    return res.status(201).json({ linked: true, child_id: childId, relationship });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

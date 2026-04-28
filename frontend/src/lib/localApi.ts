@@ -210,6 +210,34 @@ export interface ParentDashboardOverview {
   unread_notification_count: number;
 }
 
+export interface ParentAttendanceRow {
+  child_id: string;
+  full_name: string;
+  class_name: string;
+  grade: string;
+  attendance_date: string | null;
+  status: "present" | "absent" | "late" | "excused" | null;
+  reason: string | null;
+  marked_by: string | null;
+}
+
+export interface ParentTeacherContact {
+  id: string;
+  full_name: string;
+  email: string;
+  class_name: string;
+}
+
+export interface ParentTeacherMessage {
+  id: string;
+  parent_id: string;
+  teacher_id: string;
+  sender_id: string;
+  message: string;
+  read_at: string | null;
+  created_at: string;
+}
+
 export interface QuizCreateQuestionInput {
   prompt: string;
   options: Array<{
@@ -450,6 +478,7 @@ export const localApi = {
     },
     parent: {
       dashboard: () => request<ParentDashboardOverview>("/api/ops/parent/dashboard"),
+      attendance: () => request<ParentAttendanceRow[]>("/api/ops/parent/attendance"),
       homeworkFeed: () => request<HomeworkItem[]>("/api/ops/parent/homework"),
       markHomeworkRead: (homeworkId: string) =>
         request<{ homework_id: string; read: boolean }>(
@@ -461,6 +490,24 @@ export const localApi = {
       notifications: () => request<NotificationItem[]>("/api/ops/parent/notifications"),
       createDelegate: (payload: { delegate_name: string; phone: string; relationship: string }) =>
         request<{ id: string; status: string }>("/api/ops/parent/delegates", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }),
+      linkChild: (payload: { child_id: string; relationship?: string }) =>
+        request<{ linked: boolean; child_id: string; relationship: string }>(
+          "/api/ops/parent/link-child",
+          {
+            method: "POST",
+            body: JSON.stringify(payload),
+          },
+        ),
+      teachers: () => request<ParentTeacherContact[]>("/api/ops/parent/teachers"),
+      messages: (teacherId: string) =>
+        request<ParentTeacherMessage[]>(
+          `/api/ops/parent/messages?teacherId=${encodeURIComponent(teacherId)}`,
+        ),
+      sendMessage: (payload: { teacher_id: string; message: string }) =>
+        request<{ id: string; teacher_id: number; message: string }>("/api/ops/parent/messages", {
           method: "POST",
           body: JSON.stringify(payload),
         }),

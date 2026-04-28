@@ -19,6 +19,31 @@ import { Route as AppParentRouteImport } from './routes/_app/parent'
 import { Route as AppDelegateRouteImport } from './routes/_app/delegate'
 import { Route as AppChildModeRouteImport } from './routes/_app/child-mode'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
+import { Route as AppParentIndexRouteImport } from './routes/_app/parent/index'
+import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
+import { Route as AppTeacherQuizzesRouteImport } from './routes/_app/teacher/quizzes'
+import { Route as AppTeacherParentNotificationsRouteImport } from './routes/_app/teacher/parent-notifications'
+import { Route as AppTeacherMyClassesRouteImport } from './routes/_app/teacher/my-classes'
+import { Route as AppTeacherHomeworkRouteImport } from './routes/_app/teacher/homework'
+import { Route as AppTeacherDashboardRouteImport } from './routes/_app/teacher/dashboard'
+import { Route as AppTeacherAttendanceRouteImport } from './routes/_app/teacher/attendance'
+import { Route as AppTeacherAnnouncementsRouteImport } from './routes/_app/teacher/announcements'
+import { Route as AppParentNotificationsRouteImport } from './routes/_app/parent/notifications'
+import { Route as AppParentMyChildrenRouteImport } from './routes/_app/parent/my-children'
+import { Route as AppParentMessagesRouteImport } from './routes/_app/parent/messages'
+import { Route as AppParentHomeworkRouteImport } from './routes/_app/parent/homework'
+import { Route as AppParentDashboardRouteImport } from './routes/_app/parent/dashboard'
+import { Route as AppParentAbsencesRouteImport } from './routes/_app/parent/absences'
+import { Route as AppParentAbsenceReportRouteImport } from './routes/_app/parent/absence-report'
+import { Route as AppAdminTeachersRouteImport } from './routes/_app/admin/teachers'
+import { Route as AppAdminSchoolOverviewRouteImport } from './routes/_app/admin/school-overview'
+import { Route as AppAdminReportsRouteImport } from './routes/_app/admin/reports'
+import { Route as AppAdminParentsGuardiansRouteImport } from './routes/_app/admin/parents-guardians'
+import { Route as AppAdminLinkRequestsRouteImport } from './routes/_app/admin/link-requests'
+import { Route as AppAdminLearnersRouteImport } from './routes/_app/admin/learners'
+import { Route as AppAdminDashboardRouteImport } from './routes/_app/admin/dashboard'
+import { Route as AppAdminClassesRouteImport } from './routes/_app/admin/classes'
+import { Route as AppAdminAttendanceRouteImport } from './routes/_app/admin/attendance'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -69,41 +94,241 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const AppParentIndexRoute = AppParentIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppParentRoute,
+} as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppTeacherQuizzesRoute = AppTeacherQuizzesRouteImport.update({
+  id: '/quizzes',
+  path: '/quizzes',
+  getParentRoute: () => AppTeacherRoute,
+} as any)
+const AppTeacherParentNotificationsRoute =
+  AppTeacherParentNotificationsRouteImport.update({
+    id: '/parent-notifications',
+    path: '/parent-notifications',
+    getParentRoute: () => AppTeacherRoute,
+  } as any)
+const AppTeacherMyClassesRoute = AppTeacherMyClassesRouteImport.update({
+  id: '/my-classes',
+  path: '/my-classes',
+  getParentRoute: () => AppTeacherRoute,
+} as any)
+const AppTeacherHomeworkRoute = AppTeacherHomeworkRouteImport.update({
+  id: '/homework',
+  path: '/homework',
+  getParentRoute: () => AppTeacherRoute,
+} as any)
+const AppTeacherDashboardRoute = AppTeacherDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppTeacherRoute,
+} as any)
+const AppTeacherAttendanceRoute = AppTeacherAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
+  getParentRoute: () => AppTeacherRoute,
+} as any)
+const AppTeacherAnnouncementsRoute = AppTeacherAnnouncementsRouteImport.update({
+  id: '/announcements',
+  path: '/announcements',
+  getParentRoute: () => AppTeacherRoute,
+} as any)
+const AppParentNotificationsRoute = AppParentNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppParentRoute,
+} as any)
+const AppParentMyChildrenRoute = AppParentMyChildrenRouteImport.update({
+  id: '/my-children',
+  path: '/my-children',
+  getParentRoute: () => AppParentRoute,
+} as any)
+const AppParentMessagesRoute = AppParentMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AppParentRoute,
+} as any)
+const AppParentHomeworkRoute = AppParentHomeworkRouteImport.update({
+  id: '/homework',
+  path: '/homework',
+  getParentRoute: () => AppParentRoute,
+} as any)
+const AppParentDashboardRoute = AppParentDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppParentRoute,
+} as any)
+const AppParentAbsencesRoute = AppParentAbsencesRouteImport.update({
+  id: '/absences',
+  path: '/absences',
+  getParentRoute: () => AppParentRoute,
+} as any)
+const AppParentAbsenceReportRoute = AppParentAbsenceReportRouteImport.update({
+  id: '/absence-report',
+  path: '/absence-report',
+  getParentRoute: () => AppParentRoute,
+} as any)
+const AppAdminTeachersRoute = AppAdminTeachersRouteImport.update({
+  id: '/teachers',
+  path: '/teachers',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminSchoolOverviewRoute = AppAdminSchoolOverviewRouteImport.update({
+  id: '/school-overview',
+  path: '/school-overview',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminReportsRoute = AppAdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminParentsGuardiansRoute =
+  AppAdminParentsGuardiansRouteImport.update({
+    id: '/parents-guardians',
+    path: '/parents-guardians',
+    getParentRoute: () => AppAdminRoute,
+  } as any)
+const AppAdminLinkRequestsRoute = AppAdminLinkRequestsRouteImport.update({
+  id: '/link-requests',
+  path: '/link-requests',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminLearnersRoute = AppAdminLearnersRouteImport.update({
+  id: '/learners',
+  path: '/learners',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminDashboardRoute = AppAdminDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminClassesRoute = AppAdminClassesRouteImport.update({
+  id: '/classes',
+  path: '/classes',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminAttendanceRoute = AppAdminAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/admin': typeof AppAdminRoute
+  '/admin': typeof AppAdminRouteWithChildren
   '/child-mode': typeof AppChildModeRoute
   '/delegate': typeof AppDelegateRoute
-  '/parent': typeof AppParentRoute
+  '/parent': typeof AppParentRouteWithChildren
   '/security': typeof AppSecurityRoute
   '/system': typeof AppSystemRoute
-  '/teacher': typeof AppTeacherRoute
+  '/teacher': typeof AppTeacherRouteWithChildren
+  '/admin/attendance': typeof AppAdminAttendanceRoute
+  '/admin/classes': typeof AppAdminClassesRoute
+  '/admin/dashboard': typeof AppAdminDashboardRoute
+  '/admin/learners': typeof AppAdminLearnersRoute
+  '/admin/link-requests': typeof AppAdminLinkRequestsRoute
+  '/admin/parents-guardians': typeof AppAdminParentsGuardiansRoute
+  '/admin/reports': typeof AppAdminReportsRoute
+  '/admin/school-overview': typeof AppAdminSchoolOverviewRoute
+  '/admin/teachers': typeof AppAdminTeachersRoute
+  '/parent/absence-report': typeof AppParentAbsenceReportRoute
+  '/parent/absences': typeof AppParentAbsencesRoute
+  '/parent/dashboard': typeof AppParentDashboardRoute
+  '/parent/homework': typeof AppParentHomeworkRoute
+  '/parent/messages': typeof AppParentMessagesRoute
+  '/parent/my-children': typeof AppParentMyChildrenRoute
+  '/parent/notifications': typeof AppParentNotificationsRoute
+  '/teacher/announcements': typeof AppTeacherAnnouncementsRoute
+  '/teacher/attendance': typeof AppTeacherAttendanceRoute
+  '/teacher/dashboard': typeof AppTeacherDashboardRoute
+  '/teacher/homework': typeof AppTeacherHomeworkRoute
+  '/teacher/my-classes': typeof AppTeacherMyClassesRoute
+  '/teacher/parent-notifications': typeof AppTeacherParentNotificationsRoute
+  '/teacher/quizzes': typeof AppTeacherQuizzesRoute
+  '/admin/': typeof AppAdminIndexRoute
+  '/parent/': typeof AppParentIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/admin': typeof AppAdminRoute
   '/child-mode': typeof AppChildModeRoute
   '/delegate': typeof AppDelegateRoute
-  '/parent': typeof AppParentRoute
   '/security': typeof AppSecurityRoute
   '/system': typeof AppSystemRoute
-  '/teacher': typeof AppTeacherRoute
+  '/teacher': typeof AppTeacherRouteWithChildren
+  '/admin/attendance': typeof AppAdminAttendanceRoute
+  '/admin/classes': typeof AppAdminClassesRoute
+  '/admin/dashboard': typeof AppAdminDashboardRoute
+  '/admin/learners': typeof AppAdminLearnersRoute
+  '/admin/link-requests': typeof AppAdminLinkRequestsRoute
+  '/admin/parents-guardians': typeof AppAdminParentsGuardiansRoute
+  '/admin/reports': typeof AppAdminReportsRoute
+  '/admin/school-overview': typeof AppAdminSchoolOverviewRoute
+  '/admin/teachers': typeof AppAdminTeachersRoute
+  '/parent/absence-report': typeof AppParentAbsenceReportRoute
+  '/parent/absences': typeof AppParentAbsencesRoute
+  '/parent/dashboard': typeof AppParentDashboardRoute
+  '/parent/homework': typeof AppParentHomeworkRoute
+  '/parent/messages': typeof AppParentMessagesRoute
+  '/parent/my-children': typeof AppParentMyChildrenRoute
+  '/parent/notifications': typeof AppParentNotificationsRoute
+  '/teacher/announcements': typeof AppTeacherAnnouncementsRoute
+  '/teacher/attendance': typeof AppTeacherAttendanceRoute
+  '/teacher/dashboard': typeof AppTeacherDashboardRoute
+  '/teacher/homework': typeof AppTeacherHomeworkRoute
+  '/teacher/my-classes': typeof AppTeacherMyClassesRoute
+  '/teacher/parent-notifications': typeof AppTeacherParentNotificationsRoute
+  '/teacher/quizzes': typeof AppTeacherQuizzesRoute
+  '/admin': typeof AppAdminIndexRoute
+  '/parent': typeof AppParentIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
-  '/_app/admin': typeof AppAdminRoute
+  '/_app/admin': typeof AppAdminRouteWithChildren
   '/_app/child-mode': typeof AppChildModeRoute
   '/_app/delegate': typeof AppDelegateRoute
-  '/_app/parent': typeof AppParentRoute
+  '/_app/parent': typeof AppParentRouteWithChildren
   '/_app/security': typeof AppSecurityRoute
   '/_app/system': typeof AppSystemRoute
-  '/_app/teacher': typeof AppTeacherRoute
+  '/_app/teacher': typeof AppTeacherRouteWithChildren
+  '/_app/admin/attendance': typeof AppAdminAttendanceRoute
+  '/_app/admin/classes': typeof AppAdminClassesRoute
+  '/_app/admin/dashboard': typeof AppAdminDashboardRoute
+  '/_app/admin/learners': typeof AppAdminLearnersRoute
+  '/_app/admin/link-requests': typeof AppAdminLinkRequestsRoute
+  '/_app/admin/parents-guardians': typeof AppAdminParentsGuardiansRoute
+  '/_app/admin/reports': typeof AppAdminReportsRoute
+  '/_app/admin/school-overview': typeof AppAdminSchoolOverviewRoute
+  '/_app/admin/teachers': typeof AppAdminTeachersRoute
+  '/_app/parent/absence-report': typeof AppParentAbsenceReportRoute
+  '/_app/parent/absences': typeof AppParentAbsencesRoute
+  '/_app/parent/dashboard': typeof AppParentDashboardRoute
+  '/_app/parent/homework': typeof AppParentHomeworkRoute
+  '/_app/parent/messages': typeof AppParentMessagesRoute
+  '/_app/parent/my-children': typeof AppParentMyChildrenRoute
+  '/_app/parent/notifications': typeof AppParentNotificationsRoute
+  '/_app/teacher/announcements': typeof AppTeacherAnnouncementsRoute
+  '/_app/teacher/attendance': typeof AppTeacherAttendanceRoute
+  '/_app/teacher/dashboard': typeof AppTeacherDashboardRoute
+  '/_app/teacher/homework': typeof AppTeacherHomeworkRoute
+  '/_app/teacher/my-classes': typeof AppTeacherMyClassesRoute
+  '/_app/teacher/parent-notifications': typeof AppTeacherParentNotificationsRoute
+  '/_app/teacher/quizzes': typeof AppTeacherQuizzesRoute
+  '/_app/admin/': typeof AppAdminIndexRoute
+  '/_app/parent/': typeof AppParentIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,17 +342,65 @@ export interface FileRouteTypes {
     | '/security'
     | '/system'
     | '/teacher'
+    | '/admin/attendance'
+    | '/admin/classes'
+    | '/admin/dashboard'
+    | '/admin/learners'
+    | '/admin/link-requests'
+    | '/admin/parents-guardians'
+    | '/admin/reports'
+    | '/admin/school-overview'
+    | '/admin/teachers'
+    | '/parent/absence-report'
+    | '/parent/absences'
+    | '/parent/dashboard'
+    | '/parent/homework'
+    | '/parent/messages'
+    | '/parent/my-children'
+    | '/parent/notifications'
+    | '/teacher/announcements'
+    | '/teacher/attendance'
+    | '/teacher/dashboard'
+    | '/teacher/homework'
+    | '/teacher/my-classes'
+    | '/teacher/parent-notifications'
+    | '/teacher/quizzes'
+    | '/admin/'
+    | '/parent/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
-    | '/admin'
     | '/child-mode'
     | '/delegate'
-    | '/parent'
     | '/security'
     | '/system'
     | '/teacher'
+    | '/admin/attendance'
+    | '/admin/classes'
+    | '/admin/dashboard'
+    | '/admin/learners'
+    | '/admin/link-requests'
+    | '/admin/parents-guardians'
+    | '/admin/reports'
+    | '/admin/school-overview'
+    | '/admin/teachers'
+    | '/parent/absence-report'
+    | '/parent/absences'
+    | '/parent/dashboard'
+    | '/parent/homework'
+    | '/parent/messages'
+    | '/parent/my-children'
+    | '/parent/notifications'
+    | '/teacher/announcements'
+    | '/teacher/attendance'
+    | '/teacher/dashboard'
+    | '/teacher/homework'
+    | '/teacher/my-classes'
+    | '/teacher/parent-notifications'
+    | '/teacher/quizzes'
+    | '/admin'
+    | '/parent'
   id:
     | '__root__'
     | '/'
@@ -140,6 +413,31 @@ export interface FileRouteTypes {
     | '/_app/security'
     | '/_app/system'
     | '/_app/teacher'
+    | '/_app/admin/attendance'
+    | '/_app/admin/classes'
+    | '/_app/admin/dashboard'
+    | '/_app/admin/learners'
+    | '/_app/admin/link-requests'
+    | '/_app/admin/parents-guardians'
+    | '/_app/admin/reports'
+    | '/_app/admin/school-overview'
+    | '/_app/admin/teachers'
+    | '/_app/parent/absence-report'
+    | '/_app/parent/absences'
+    | '/_app/parent/dashboard'
+    | '/_app/parent/homework'
+    | '/_app/parent/messages'
+    | '/_app/parent/my-children'
+    | '/_app/parent/notifications'
+    | '/_app/teacher/announcements'
+    | '/_app/teacher/attendance'
+    | '/_app/teacher/dashboard'
+    | '/_app/teacher/homework'
+    | '/_app/teacher/my-classes'
+    | '/_app/teacher/parent-notifications'
+    | '/_app/teacher/quizzes'
+    | '/_app/admin/'
+    | '/_app/parent/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -220,27 +518,282 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/parent/': {
+      id: '/_app/parent/'
+      path: '/'
+      fullPath: '/parent/'
+      preLoaderRoute: typeof AppParentIndexRouteImport
+      parentRoute: typeof AppParentRoute
+    }
+    '/_app/admin/': {
+      id: '/_app/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/teacher/quizzes': {
+      id: '/_app/teacher/quizzes'
+      path: '/quizzes'
+      fullPath: '/teacher/quizzes'
+      preLoaderRoute: typeof AppTeacherQuizzesRouteImport
+      parentRoute: typeof AppTeacherRoute
+    }
+    '/_app/teacher/parent-notifications': {
+      id: '/_app/teacher/parent-notifications'
+      path: '/parent-notifications'
+      fullPath: '/teacher/parent-notifications'
+      preLoaderRoute: typeof AppTeacherParentNotificationsRouteImport
+      parentRoute: typeof AppTeacherRoute
+    }
+    '/_app/teacher/my-classes': {
+      id: '/_app/teacher/my-classes'
+      path: '/my-classes'
+      fullPath: '/teacher/my-classes'
+      preLoaderRoute: typeof AppTeacherMyClassesRouteImport
+      parentRoute: typeof AppTeacherRoute
+    }
+    '/_app/teacher/homework': {
+      id: '/_app/teacher/homework'
+      path: '/homework'
+      fullPath: '/teacher/homework'
+      preLoaderRoute: typeof AppTeacherHomeworkRouteImport
+      parentRoute: typeof AppTeacherRoute
+    }
+    '/_app/teacher/dashboard': {
+      id: '/_app/teacher/dashboard'
+      path: '/dashboard'
+      fullPath: '/teacher/dashboard'
+      preLoaderRoute: typeof AppTeacherDashboardRouteImport
+      parentRoute: typeof AppTeacherRoute
+    }
+    '/_app/teacher/attendance': {
+      id: '/_app/teacher/attendance'
+      path: '/attendance'
+      fullPath: '/teacher/attendance'
+      preLoaderRoute: typeof AppTeacherAttendanceRouteImport
+      parentRoute: typeof AppTeacherRoute
+    }
+    '/_app/teacher/announcements': {
+      id: '/_app/teacher/announcements'
+      path: '/announcements'
+      fullPath: '/teacher/announcements'
+      preLoaderRoute: typeof AppTeacherAnnouncementsRouteImport
+      parentRoute: typeof AppTeacherRoute
+    }
+    '/_app/parent/notifications': {
+      id: '/_app/parent/notifications'
+      path: '/notifications'
+      fullPath: '/parent/notifications'
+      preLoaderRoute: typeof AppParentNotificationsRouteImport
+      parentRoute: typeof AppParentRoute
+    }
+    '/_app/parent/my-children': {
+      id: '/_app/parent/my-children'
+      path: '/my-children'
+      fullPath: '/parent/my-children'
+      preLoaderRoute: typeof AppParentMyChildrenRouteImport
+      parentRoute: typeof AppParentRoute
+    }
+    '/_app/parent/messages': {
+      id: '/_app/parent/messages'
+      path: '/messages'
+      fullPath: '/parent/messages'
+      preLoaderRoute: typeof AppParentMessagesRouteImport
+      parentRoute: typeof AppParentRoute
+    }
+    '/_app/parent/homework': {
+      id: '/_app/parent/homework'
+      path: '/homework'
+      fullPath: '/parent/homework'
+      preLoaderRoute: typeof AppParentHomeworkRouteImport
+      parentRoute: typeof AppParentRoute
+    }
+    '/_app/parent/dashboard': {
+      id: '/_app/parent/dashboard'
+      path: '/dashboard'
+      fullPath: '/parent/dashboard'
+      preLoaderRoute: typeof AppParentDashboardRouteImport
+      parentRoute: typeof AppParentRoute
+    }
+    '/_app/parent/absences': {
+      id: '/_app/parent/absences'
+      path: '/absences'
+      fullPath: '/parent/absences'
+      preLoaderRoute: typeof AppParentAbsencesRouteImport
+      parentRoute: typeof AppParentRoute
+    }
+    '/_app/parent/absence-report': {
+      id: '/_app/parent/absence-report'
+      path: '/absence-report'
+      fullPath: '/parent/absence-report'
+      preLoaderRoute: typeof AppParentAbsenceReportRouteImport
+      parentRoute: typeof AppParentRoute
+    }
+    '/_app/admin/teachers': {
+      id: '/_app/admin/teachers'
+      path: '/teachers'
+      fullPath: '/admin/teachers'
+      preLoaderRoute: typeof AppAdminTeachersRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/school-overview': {
+      id: '/_app/admin/school-overview'
+      path: '/school-overview'
+      fullPath: '/admin/school-overview'
+      preLoaderRoute: typeof AppAdminSchoolOverviewRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/reports': {
+      id: '/_app/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AppAdminReportsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/parents-guardians': {
+      id: '/_app/admin/parents-guardians'
+      path: '/parents-guardians'
+      fullPath: '/admin/parents-guardians'
+      preLoaderRoute: typeof AppAdminParentsGuardiansRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/link-requests': {
+      id: '/_app/admin/link-requests'
+      path: '/link-requests'
+      fullPath: '/admin/link-requests'
+      preLoaderRoute: typeof AppAdminLinkRequestsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/learners': {
+      id: '/_app/admin/learners'
+      path: '/learners'
+      fullPath: '/admin/learners'
+      preLoaderRoute: typeof AppAdminLearnersRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/dashboard': {
+      id: '/_app/admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AppAdminDashboardRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/classes': {
+      id: '/_app/admin/classes'
+      path: '/classes'
+      fullPath: '/admin/classes'
+      preLoaderRoute: typeof AppAdminClassesRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/_app/admin/attendance': {
+      id: '/_app/admin/attendance'
+      path: '/attendance'
+      fullPath: '/admin/attendance'
+      preLoaderRoute: typeof AppAdminAttendanceRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
   }
 }
 
+interface AppAdminRouteChildren {
+  AppAdminAttendanceRoute: typeof AppAdminAttendanceRoute
+  AppAdminClassesRoute: typeof AppAdminClassesRoute
+  AppAdminDashboardRoute: typeof AppAdminDashboardRoute
+  AppAdminLearnersRoute: typeof AppAdminLearnersRoute
+  AppAdminLinkRequestsRoute: typeof AppAdminLinkRequestsRoute
+  AppAdminParentsGuardiansRoute: typeof AppAdminParentsGuardiansRoute
+  AppAdminReportsRoute: typeof AppAdminReportsRoute
+  AppAdminSchoolOverviewRoute: typeof AppAdminSchoolOverviewRoute
+  AppAdminTeachersRoute: typeof AppAdminTeachersRoute
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
+}
+
+const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminAttendanceRoute: AppAdminAttendanceRoute,
+  AppAdminClassesRoute: AppAdminClassesRoute,
+  AppAdminDashboardRoute: AppAdminDashboardRoute,
+  AppAdminLearnersRoute: AppAdminLearnersRoute,
+  AppAdminLinkRequestsRoute: AppAdminLinkRequestsRoute,
+  AppAdminParentsGuardiansRoute: AppAdminParentsGuardiansRoute,
+  AppAdminReportsRoute: AppAdminReportsRoute,
+  AppAdminSchoolOverviewRoute: AppAdminSchoolOverviewRoute,
+  AppAdminTeachersRoute: AppAdminTeachersRoute,
+  AppAdminIndexRoute: AppAdminIndexRoute,
+}
+
+const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
+  AppAdminRouteChildren,
+)
+
+interface AppParentRouteChildren {
+  AppParentAbsenceReportRoute: typeof AppParentAbsenceReportRoute
+  AppParentAbsencesRoute: typeof AppParentAbsencesRoute
+  AppParentDashboardRoute: typeof AppParentDashboardRoute
+  AppParentHomeworkRoute: typeof AppParentHomeworkRoute
+  AppParentMessagesRoute: typeof AppParentMessagesRoute
+  AppParentMyChildrenRoute: typeof AppParentMyChildrenRoute
+  AppParentNotificationsRoute: typeof AppParentNotificationsRoute
+  AppParentIndexRoute: typeof AppParentIndexRoute
+}
+
+const AppParentRouteChildren: AppParentRouteChildren = {
+  AppParentAbsenceReportRoute: AppParentAbsenceReportRoute,
+  AppParentAbsencesRoute: AppParentAbsencesRoute,
+  AppParentDashboardRoute: AppParentDashboardRoute,
+  AppParentHomeworkRoute: AppParentHomeworkRoute,
+  AppParentMessagesRoute: AppParentMessagesRoute,
+  AppParentMyChildrenRoute: AppParentMyChildrenRoute,
+  AppParentNotificationsRoute: AppParentNotificationsRoute,
+  AppParentIndexRoute: AppParentIndexRoute,
+}
+
+const AppParentRouteWithChildren = AppParentRoute._addFileChildren(
+  AppParentRouteChildren,
+)
+
+interface AppTeacherRouteChildren {
+  AppTeacherAnnouncementsRoute: typeof AppTeacherAnnouncementsRoute
+  AppTeacherAttendanceRoute: typeof AppTeacherAttendanceRoute
+  AppTeacherDashboardRoute: typeof AppTeacherDashboardRoute
+  AppTeacherHomeworkRoute: typeof AppTeacherHomeworkRoute
+  AppTeacherMyClassesRoute: typeof AppTeacherMyClassesRoute
+  AppTeacherParentNotificationsRoute: typeof AppTeacherParentNotificationsRoute
+  AppTeacherQuizzesRoute: typeof AppTeacherQuizzesRoute
+}
+
+const AppTeacherRouteChildren: AppTeacherRouteChildren = {
+  AppTeacherAnnouncementsRoute: AppTeacherAnnouncementsRoute,
+  AppTeacherAttendanceRoute: AppTeacherAttendanceRoute,
+  AppTeacherDashboardRoute: AppTeacherDashboardRoute,
+  AppTeacherHomeworkRoute: AppTeacherHomeworkRoute,
+  AppTeacherMyClassesRoute: AppTeacherMyClassesRoute,
+  AppTeacherParentNotificationsRoute: AppTeacherParentNotificationsRoute,
+  AppTeacherQuizzesRoute: AppTeacherQuizzesRoute,
+}
+
+const AppTeacherRouteWithChildren = AppTeacherRoute._addFileChildren(
+  AppTeacherRouteChildren,
+)
+
 interface AppRouteChildren {
-  AppAdminRoute: typeof AppAdminRoute
+  AppAdminRoute: typeof AppAdminRouteWithChildren
   AppChildModeRoute: typeof AppChildModeRoute
   AppDelegateRoute: typeof AppDelegateRoute
-  AppParentRoute: typeof AppParentRoute
+  AppParentRoute: typeof AppParentRouteWithChildren
   AppSecurityRoute: typeof AppSecurityRoute
   AppSystemRoute: typeof AppSystemRoute
-  AppTeacherRoute: typeof AppTeacherRoute
+  AppTeacherRoute: typeof AppTeacherRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppAdminRoute: AppAdminRoute,
+  AppAdminRoute: AppAdminRouteWithChildren,
   AppChildModeRoute: AppChildModeRoute,
   AppDelegateRoute: AppDelegateRoute,
-  AppParentRoute: AppParentRoute,
+  AppParentRoute: AppParentRouteWithChildren,
   AppSecurityRoute: AppSecurityRoute,
   AppSystemRoute: AppSystemRoute,
-  AppTeacherRoute: AppTeacherRoute,
+  AppTeacherRoute: AppTeacherRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
