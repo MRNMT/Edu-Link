@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
@@ -40,6 +41,7 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap",
@@ -66,6 +68,14 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useEffect(() => {
+    const { pathname, search, hash } = window.location;
+    if (!pathname.startsWith("/_app/")) return;
+
+    const correctedPath = pathname.replace(/^\/_app/, "") || "/";
+    window.location.replace(`${correctedPath}${search}${hash}`);
+  }, []);
+
   return (
     <AppProviders>
       <Outlet />

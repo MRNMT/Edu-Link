@@ -48,7 +48,11 @@ function AppGuard() {
   const isStandaloneLayoutRoute =
     location.pathname.startsWith("/parent") ||
     location.pathname.startsWith("/child-mode") ||
-    location.pathname.startsWith("/admin");
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/teacher") ||
+    location.pathname.startsWith("/delegate") ||
+    location.pathname.startsWith("/security") ||
+    location.pathname.startsWith("/system");
 
   if (isStandaloneLayoutRoute) {
     return <Outlet />;

@@ -330,6 +330,10 @@ export const localApi = {
         method: "PUT",
         body: JSON.stringify(payload),
       }),
+    delete: (quizId: string) =>
+      request<void>(`/api/teachers/me/quizzes/${quizId}`, {
+        method: "DELETE",
+      }),
     forChild: (childId: string) => request<ChildQuizPayload>(`/api/children/${childId}/quizzes`),
     submit: (childId: string, quizId: string, answers: QuizSubmissionAnswer[]) =>
       request<QuizAttempt>(`/api/children/${childId}/quizzes/${quizId}/submit`, {
