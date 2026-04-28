@@ -4,7 +4,16 @@ import { ConsoleHeader } from "@/components/ConsoleHeader";
 import { useAppDispatch, useAppSelector } from "@/store";
 import { exitChildModeThunk } from "@/store/slices/childModeSlice";
 import { localApi, type Quiz, type QuizSubmissionAnswer } from "@/lib/localApi";
-import { AlertCircle, BookOpen, CheckCircle2, Lock, LogOut, Send, ShieldCheck, Star } from "lucide-react";
+import {
+  AlertCircle,
+  BookOpen,
+  CheckCircle2,
+  Lock,
+  LogOut,
+  Send,
+  ShieldCheck,
+  Star,
+} from "lucide-react";
 import { toast } from "sonner";
 
 function QuizCard({
@@ -26,7 +35,9 @@ function QuizCard({
 }) {
   const attempt = quiz.attempt;
   const completed = Boolean(attempt);
-  const reviewByQuestion = new Map((quiz.review?.items ?? []).map((item) => [item.question_id, item]));
+  const reviewByQuestion = new Map(
+    (quiz.review?.items ?? []).map((item) => [item.question_id, item]),
+  );
 
   return (
     <div className="panel-elevated overflow-hidden border border-border">
@@ -40,7 +51,9 @@ function QuizCard({
           <div className="mt-1 text-xs text-muted-foreground">
             {quiz.class_name} · {quiz.question_count} questions
           </div>
-          {quiz.description && <p className="mt-2 text-sm text-muted-foreground">{quiz.description}</p>}
+          {quiz.description && (
+            <p className="mt-2 text-sm text-muted-foreground">{quiz.description}</p>
+          )}
         </div>
         <span className={`pill-status ${completed ? "pill-success" : "pill-info"}`}>
           {completed ? `Score ${attempt?.score}/${attempt?.total_questions}` : "Open"}
@@ -57,7 +70,8 @@ function QuizCard({
                   Quiz completed
                 </div>
                 <p className="mt-2 text-xs text-success/80">
-                  You scored {attempt?.score} out of {attempt?.total_questions}. Your answers were saved.
+                  You scored {attempt?.score} out of {attempt?.total_questions}. Your answers were
+                  saved.
                 </p>
               </div>
 
@@ -82,7 +96,10 @@ function QuizCard({
                     );
 
                     return (
-                      <div key={question.id} className="rounded-lg border border-border bg-panel-elevated p-4">
+                      <div
+                        key={question.id}
+                        className="rounded-lg border border-border bg-panel-elevated p-4"
+                      >
                         <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                           Question {index + 1}
                         </div>
@@ -90,13 +107,15 @@ function QuizCard({
 
                         {selectedOption && (
                           <div className="mt-2 text-xs text-muted-foreground">
-                            Your answer: <span className="text-foreground">{selectedOption.option_text}</span>
+                            Your answer:{" "}
+                            <span className="text-foreground">{selectedOption.option_text}</span>
                           </div>
                         )}
 
                         {correctOption && (
                           <div className="mt-1 text-xs text-muted-foreground">
-                            Correct answer: <span className="text-success">{correctOption.option_text}</span>
+                            Correct answer:{" "}
+                            <span className="text-success">{correctOption.option_text}</span>
                           </div>
                         )}
 
@@ -125,7 +144,10 @@ function QuizCard({
           ) : (
             <div className="space-y-4">
               {quiz.questions.map((question, questionIndex) => (
-                <div key={question.id} className="rounded-lg border border-border bg-background p-4">
+                <div
+                  key={question.id}
+                  className="rounded-lg border border-border bg-background p-4"
+                >
                   <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                     Question {questionIndex + 1}
                   </div>
@@ -302,7 +324,9 @@ export default function ChildModeDashboard() {
           {loadingQuizzes ? (
             <div className="panel-elevated p-4 text-sm text-muted-foreground">Loading quizzes…</div>
           ) : quizzes.length === 0 ? (
-            <div className="panel-elevated p-4 text-sm text-muted-foreground">No quizzes posted yet.</div>
+            <div className="panel-elevated p-4 text-sm text-muted-foreground">
+              No quizzes posted yet.
+            </div>
           ) : (
             <div className="space-y-3">
               {quizzes.map((quiz) => (
@@ -310,10 +334,14 @@ export default function ChildModeDashboard() {
                   key={quiz.id}
                   quiz={quiz}
                   selectedAnswers={answersByQuiz[quiz.id] ?? {}}
-                  onSelectAnswer={(questionId, optionId) => selectQuizAnswer(quiz.id, questionId, optionId)}
+                  onSelectAnswer={(questionId, optionId) =>
+                    selectQuizAnswer(quiz.id, questionId, optionId)
+                  }
                   onSubmit={() => void submitQuiz(quiz)}
                   open={openQuizId === quiz.id}
-                  onToggle={() => setOpenQuizId((current) => (current === quiz.id ? null : quiz.id))}
+                  onToggle={() =>
+                    setOpenQuizId((current) => (current === quiz.id ? null : quiz.id))
+                  }
                   submitting={submittingQuizId === quiz.id}
                 />
               ))}

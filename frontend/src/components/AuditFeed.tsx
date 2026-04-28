@@ -58,9 +58,7 @@ export function AuditFeed({ entries, loading = false, onLoadMore }: AuditFeedPro
                     {entry.actor_name || `actor#${entry.actor_id}`}
                   </span>
                   {entry.target && (
-                    <span className="text-muted-foreground/40">
-                      ⟹ {entry.target}
-                    </span>
+                    <span className="text-muted-foreground/40">⟹ {entry.target}</span>
                   )}
                 </div>
               </div>

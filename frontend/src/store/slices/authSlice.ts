@@ -91,15 +91,18 @@ export const reauthenticateThunk = createAsyncThunk(
   },
 );
 
-export const fetchProfileAndRoles = createAsyncThunk("auth/fetchProfile", async (_, { rejectWithValue }) => {
-  try {
-    const session = await localApi.auth.me();
-    setStoredToken(session.access_token);
-    return session;
-  } catch (error) {
-    return rejectWithValue(error instanceof Error ? error.message : "Failed to fetch profile");
-  }
-});
+export const fetchProfileAndRoles = createAsyncThunk(
+  "auth/fetchProfile",
+  async (_, { rejectWithValue }) => {
+    try {
+      const session = await localApi.auth.me();
+      setStoredToken(session.access_token);
+      return session;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : "Failed to fetch profile");
+    }
+  },
+);
 
 export const updateProfileThunk = createAsyncThunk(
   "auth/updateProfile",

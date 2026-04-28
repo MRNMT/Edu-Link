@@ -12,7 +12,10 @@ const roleSlice = createSlice({
   name: "role",
   initialState,
   reducers: {
-    setActiveRole(state, action: PayloadAction<{ role: AppRole | null; availableRoles?: AppRole[] }>) {
+    setActiveRole(
+      state,
+      action: PayloadAction<{ role: AppRole | null; availableRoles?: AppRole[] }>,
+    ) {
       const { role, availableRoles } = action.payload;
 
       // Validate role is in available roles if specified

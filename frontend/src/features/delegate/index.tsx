@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { useAppSelector } from '@/store';
-import { ConsoleHeader } from '@/components/ConsoleHeader';
-import { localApi } from '@/lib/localApi';
-import { QrCode, Clock, CheckCircle, AlertCircle, Copy, RefreshCw } from 'lucide-react';
-import { toast } from 'sonner';
+import { useEffect, useState } from "react";
+import { useAppSelector } from "@/store";
+import { ConsoleHeader } from "@/components/ConsoleHeader";
+import { localApi } from "@/lib/localApi";
+import { QrCode, Clock, CheckCircle, AlertCircle, Copy, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 interface Child {
   id: string;
@@ -18,7 +18,7 @@ interface DelegateVoucher {
   child_name: string;
   code: string;
   otp: string;
-  status: 'active' | 'used' | 'expired' | 'rejected';
+  status: "active" | "used" | "expired" | "rejected";
   expires_at: string;
   created_at: string;
   used_at: string | null;
@@ -47,8 +47,8 @@ export default function DelegateDashboard() {
         setVouchers(
           activePasses.map((token) => ({
             id: token.id,
-            child_id: token.child_id ?? '',
-            child_name: token.child?.full_name ?? 'Unknown child',
+            child_id: token.child_id ?? "",
+            child_name: token.child?.full_name ?? "Unknown child",
             code: token.code,
             otp: token.otp,
             status: token.status,
@@ -58,7 +58,7 @@ export default function DelegateDashboard() {
           })),
         );
       } catch (error) {
-        toast.error('Failed to load delegate data');
+        toast.error("Failed to load delegate data");
       } finally {
         setLoading(false);
       }
@@ -69,7 +69,7 @@ export default function DelegateDashboard() {
   // Generate 30-minute pickup voucher
   const generateVoucher = async (child: Child) => {
     if (!user || !profile?.school_id) return;
-    
+
     try {
       setGenerating(true);
       const token = await localApi.ops.delegate.createPickupPass({ child_id: child.id });
@@ -86,11 +86,11 @@ export default function DelegateDashboard() {
       };
       setVouchers([newVoucher, ...vouchers]);
       toast.success(`Voucher generated for ${child.full_name}`, {
-        description: 'Valid for 30 minutes',
+        description: "Valid for 30 minutes",
       });
       setSelectedChild(null);
     } catch (error) {
-      toast.error('Failed to generate voucher');
+      toast.error("Failed to generate voucher");
     } finally {
       setGenerating(false);
     }
@@ -105,36 +105,36 @@ export default function DelegateDashboard() {
   // Status indicator color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'used':
-        return 'text-success bg-success/10 border-success/40';
-      case 'active':
-        return 'text-info bg-info/10 border-info/40';
-      case 'expired':
-        return 'text-muted-foreground bg-muted/10 border-muted/40';
-      case 'rejected':
-        return 'text-destructive bg-destructive/10 border-destructive/40';
+      case "used":
+        return "text-success bg-success/10 border-success/40";
+      case "active":
+        return "text-info bg-info/10 border-info/40";
+      case "expired":
+        return "text-muted-foreground bg-muted/10 border-muted/40";
+      case "rejected":
+        return "text-destructive bg-destructive/10 border-destructive/40";
       default:
-        return 'text-foreground bg-background border-border';
+        return "text-foreground bg-background border-border";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'used':
+      case "used":
         return <CheckCircle className="h-4 w-4" />;
-      case 'active':
+      case "active":
         return <QrCode className="h-4 w-4" />;
-      case 'expired':
+      case "expired":
         return <Clock className="h-4 w-4" />;
-      case 'rejected':
+      case "rejected":
         return <AlertCircle className="h-4 w-4" />;
       default:
         return null;
     }
   };
 
-  const activeVouchersCount = vouchers.filter((v) => v.status === 'active').length;
-  const usedVouchersCount = vouchers.filter((v) => v.status === 'used').length;
+  const activeVouchersCount = vouchers.filter((v) => v.status === "active").length;
+  const usedVouchersCount = vouchers.filter((v) => v.status === "used").length;
 
   if (loading) {
     return (
@@ -194,7 +194,9 @@ export default function DelegateDashboard() {
         <section className="space-y-4">
           <div>
             <h2 className="text-lg font-semibold">Generate Pickup Voucher</h2>
-            <p className="text-xs text-muted-foreground">Select a child to create a 30-minute pickup voucher</p>
+            <p className="text-xs text-muted-foreground">
+              Select a child to create a 30-minute pickup voucher
+            </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -204,8 +206,8 @@ export default function DelegateDashboard() {
                 onClick={() => setSelectedChild(child)}
                 className={`panel-elevated border-2 p-4 text-left transition ${
                   selectedChild?.id === child.id
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:border-primary/50'
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
                 }`}
               >
                 <div className="font-semibold">{child.full_name}</div>
@@ -224,9 +226,7 @@ export default function DelegateDashboard() {
                     Generating for
                   </div>
                   <div className="mt-2 font-semibold">{selectedChild.full_name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    Expires in 30 minutes
-                  </div>
+                  <div className="text-xs text-muted-foreground">Expires in 30 minutes</div>
                 </div>
                 <button
                   onClick={() => generateVoucher(selectedChild)}
@@ -234,7 +234,7 @@ export default function DelegateDashboard() {
                   className="inline-flex items-center gap-2 rounded-md bg-success px-4 py-2 text-success-foreground hover:bg-success/90 disabled:opacity-50"
                 >
                   <QrCode className="h-4 w-4" />
-                  {generating ? 'Generating...' : 'Generate Voucher'}
+                  {generating ? "Generating..." : "Generate Voucher"}
                 </button>
               </div>
             </div>
@@ -245,7 +245,9 @@ export default function DelegateDashboard() {
         <section className="space-y-4">
           <div>
             <h2 className="text-lg font-semibold">Voucher History</h2>
-            <p className="text-xs text-muted-foreground">All pickup vouchers you've generated today</p>
+            <p className="text-xs text-muted-foreground">
+              All pickup vouchers you've generated today
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -275,7 +277,7 @@ export default function DelegateDashboard() {
                           <div className="mt-1 inline-flex items-center gap-2 rounded-md bg-background/50 px-3 py-1 font-mono text-xs">
                             {voucher.code}
                             <button
-                              onClick={() => copyToClipboard(voucher.code, 'QR code')}
+                              onClick={() => copyToClipboard(voucher.code, "QR code")}
                               className="ml-2 hover:text-primary"
                             >
                               <Copy className="h-3 w-3" />
@@ -288,7 +290,7 @@ export default function DelegateDashboard() {
                           <div className="mt-1 inline-flex items-center gap-2 rounded-md bg-background/50 px-3 py-1 font-mono text-xs tracking-widest">
                             {voucher.otp}
                             <button
-                              onClick={() => copyToClipboard(voucher.otp, 'OTP')}
+                              onClick={() => copyToClipboard(voucher.otp, "OTP")}
                               className="ml-2 hover:text-primary"
                             >
                               <Copy className="h-3 w-3" />
@@ -299,25 +301,25 @@ export default function DelegateDashboard() {
 
                       <div className="mt-3 flex gap-6 text-xs text-muted-foreground">
                         <div>
-                          <span className="text-muted-foreground/70">Created:</span>{' '}
+                          <span className="text-muted-foreground/70">Created:</span>{" "}
                           {new Date(voucher.created_at).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
+                            hour: "2-digit",
+                            minute: "2-digit",
                           })}
                         </div>
                         <div>
-                          <span className="text-muted-foreground/70">Expires:</span>{' '}
+                          <span className="text-muted-foreground/70">Expires:</span>{" "}
                           {new Date(voucher.expires_at).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
+                            hour: "2-digit",
+                            minute: "2-digit",
                           })}
                         </div>
                         {voucher.used_at && (
                           <div>
-                            <span className="text-muted-foreground/70">Used:</span>{' '}
+                            <span className="text-muted-foreground/70">Used:</span>{" "}
                             {new Date(voucher.used_at).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
+                              hour: "2-digit",
+                              minute: "2-digit",
                             })}
                           </div>
                         )}

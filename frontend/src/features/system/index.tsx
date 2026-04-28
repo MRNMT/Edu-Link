@@ -2,7 +2,16 @@ import { useEffect, useState } from "react";
 import { ConsoleHeader } from "@/components/ConsoleHeader";
 import { useAppSelector } from "@/store";
 import { localApi } from "@/lib/localApi";
-import { Activity, BarChart3, Building2, Users, AlertCircle, Zap, Server, MoreVertical } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  Building2,
+  Users,
+  AlertCircle,
+  Zap,
+  Server,
+  MoreVertical,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface School {
@@ -40,7 +49,7 @@ interface SystemLog {
 
 export default function SystemAdminDashboard() {
   const profile = useAppSelector((s) => s.auth.profile);
-  
+
   const [schools, setSchools] = useState<School[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [metrics, setMetrics] = useState<PlatformMetrics | null>(null);
@@ -51,11 +60,11 @@ export default function SystemAdminDashboard() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch system logs
         const logs = await localApi.audit.list(20);
         setSystemLogs(logs);
-        
+
         // Simulated platform metrics
         setMetrics({
           totalSchools: 24,
@@ -63,7 +72,7 @@ export default function SystemAdminDashboard() {
           activeUsers: 1203,
           totalAuditEvents: logs.length,
         });
-        
+
         // Simulated schools list
         setSchools([
           {
@@ -74,7 +83,7 @@ export default function SystemAdminDashboard() {
             created_at: new Date().toISOString(),
           },
         ]);
-        
+
         setLoading(false);
       } catch (err) {
         console.error("Failed to load system data:", err);
@@ -82,14 +91,14 @@ export default function SystemAdminDashboard() {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
   return (
     <div className="min-h-screen">
       <ConsoleHeader title="System Admin Console" subtitle="Platform Administration" />
-      
+
       <main className="mx-auto max-w-7xl px-6 py-8 space-y-6">
         {/* Platform KPI Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -99,28 +108,24 @@ export default function SystemAdminDashboard() {
                 <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
                   Total Schools
                 </div>
-                <div className="mt-2 text-2xl font-bold">
-                  {metrics?.totalSchools ?? "—"}
-                </div>
+                <div className="mt-2 text-2xl font-bold">{metrics?.totalSchools ?? "—"}</div>
               </div>
               <Building2 className="h-8 w-8 text-primary/40" />
             </div>
           </div>
-          
+
           <div className="panel p-4">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
                   Total Users
                 </div>
-                <div className="mt-2 text-2xl font-bold">
-                  {metrics?.totalUsers ?? "—"}
-                </div>
+                <div className="mt-2 text-2xl font-bold">{metrics?.totalUsers ?? "—"}</div>
               </div>
               <Users className="h-8 w-8 text-info/40" />
             </div>
           </div>
-          
+
           <div className="panel p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -134,16 +139,14 @@ export default function SystemAdminDashboard() {
               <Activity className="h-8 w-8 text-success/40" />
             </div>
           </div>
-          
+
           <div className="panel p-4">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
                   Platform Status
                 </div>
-                <div className="mt-2 text-2xl font-bold text-success">
-                  Healthy
-                </div>
+                <div className="mt-2 text-2xl font-bold text-success">Healthy</div>
               </div>
               <Server className="h-8 w-8 text-success/40" />
             </div>
@@ -156,7 +159,7 @@ export default function SystemAdminDashboard() {
             <Zap className="h-5 w-5" />
             <h2 className="text-lg font-semibold">Platform Health & Metrics</h2>
           </div>
-          
+
           <div className="grid gap-4 lg:grid-cols-2">
             <div className="space-y-2">
               <div className="flex items-center justify-between rounded-md border border-border bg-panel-elevated p-3">
@@ -176,7 +179,7 @@ export default function SystemAdminDashboard() {
                 <span className="font-mono text-xs text-warning">34%</span>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <div className="flex items-center justify-between rounded-md border border-border bg-panel-elevated p-3">
                 <span className="text-sm font-medium">Memory Usage</span>
@@ -209,7 +212,7 @@ export default function SystemAdminDashboard() {
               + Add School
             </button>
           </div>
-          
+
           {schools.length === 0 ? (
             <div className="rounded-md border border-border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
               No schools configured yet.
@@ -217,11 +220,15 @@ export default function SystemAdminDashboard() {
           ) : (
             <div className="space-y-2">
               {schools.map((school) => (
-                <div key={school.id} className="flex items-center justify-between rounded-md border border-border bg-panel-elevated p-4">
+                <div
+                  key={school.id}
+                  className="flex items-center justify-between rounded-md border border-border bg-panel-elevated p-4"
+                >
                   <div className="flex-1">
                     <div className="font-semibold">{school.name}</div>
                     <div className="text-xs text-muted-foreground">
-                      Code: <span className="font-mono">{school.code}</span> · {school.user_count || 0} users
+                      Code: <span className="font-mono">{school.code}</span> ·{" "}
+                      {school.user_count || 0} users
                     </div>
                   </div>
                   <button className="rounded p-2 text-muted-foreground transition hover:bg-muted">
@@ -244,7 +251,7 @@ export default function SystemAdminDashboard() {
               + Add User
             </button>
           </div>
-          
+
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -292,23 +299,28 @@ export default function SystemAdminDashboard() {
             <h2 className="text-lg font-semibold">System Logs & Audit Trails</h2>
             <span className="ml-auto pill-status pill-info">{systemLogs.length} events</span>
           </div>
-          
+
           <div className="font-mono text-xs space-y-1 max-h-96 overflow-y-auto">
             {systemLogs.length === 0 ? (
               <div className="text-muted-foreground py-4 text-center">No system logs.</div>
             ) : (
               systemLogs.map((log) => (
-                <div key={log.id} className="flex items-start gap-3 py-1.5 px-2 border-b border-border/40 last:border-0 hover:bg-muted/30">
+                <div
+                  key={log.id}
+                  className="flex items-start gap-3 py-1.5 px-2 border-b border-border/40 last:border-0 hover:bg-muted/30"
+                >
                   <span className="text-muted-foreground shrink-0 min-w-[100px]">
                     {new Date(log.created_at).toLocaleTimeString()}
                   </span>
-                  <span className="text-foreground font-semibold shrink-0 min-w-[120px]">{log.action}</span>
+                  <span className="text-foreground font-semibold shrink-0 min-w-[120px]">
+                    {log.action}
+                  </span>
                   <span className="text-info flex-1 truncate">{log.target}</span>
                 </div>
               ))
             )}
           </div>
-          
+
           <button className="mt-4 text-xs font-semibold uppercase tracking-wider text-primary transition hover:text-primary/80">
             Export full audit report →
           </button>
@@ -317,7 +329,7 @@ export default function SystemAdminDashboard() {
         {/* Quick Actions */}
         <section className="panel p-5">
           <h2 className="mb-4 text-lg font-semibold">Quick Actions</h2>
-          
+
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <button className="rounded-md border border-border bg-panel-elevated px-4 py-3 text-xs font-semibold uppercase transition hover:border-primary/50 hover:bg-muted">
               Backup Database

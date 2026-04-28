@@ -201,6 +201,15 @@ export interface ChildQuizPayload {
   quizzes: Quiz[];
 }
 
+export interface ParentDashboardOverview {
+  parent_name: string | null;
+  children: Child[];
+  homework: HomeworkItem[];
+  notifications: NotificationItem[];
+  active_delegate_count: number;
+  unread_notification_count: number;
+}
+
 export interface QuizCreateQuestionInput {
   prompt: string;
   options: Array<{
@@ -256,7 +265,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const message =
-      typeof payload === "string" ? payload : payload?.error || payload?.message || "Request failed";
+      typeof payload === "string"
+        ? payload
+        : payload?.error || payload?.message || "Request failed";
     throw new Error(message);
   }
 
@@ -301,7 +312,12 @@ export const localApi = {
   passes: {
     my: () => request<PickupToken[]>("/api/passes/me"),
     school: (schoolId: string) => request<PickupToken[]>(`/api/schools/${schoolId}/passes`),
-    create: (payload: { child_id?: string; child_name?: string; token_kind?: "qr" | "otp"; expires_at: string }) =>
+    create: (payload: {
+      child_id?: string;
+      child_name?: string;
+      token_kind?: "qr" | "otp";
+      expires_at: string;
+    }) =>
       request<PickupToken>("/api/passes", {
         method: "POST",
         body: JSON.stringify(payload),
@@ -313,7 +329,11 @@ export const localApi = {
       }),
   },
   audit: {
-    create: (payload: { action: string; target?: string | null; metadata?: Record<string, unknown> }) =>
+    create: (payload: {
+      action: string;
+      target?: string | null;
+      metadata?: Record<string, unknown>;
+    }) =>
       request<AuditEntry>("/api/audit", {
         method: "POST",
         body: JSON.stringify(payload),
@@ -339,33 +359,51 @@ export const localApi = {
           `/api/ops/admin/attendance/review?date=${encodeURIComponent(date)}`,
         ),
       delegates: (status: string = "pending") =>
-        request<DelegateQueueItem[]>(`/api/ops/admin/delegates?status=${encodeURIComponent(status)}`),
+        request<DelegateQueueItem[]>(
+          `/api/ops/admin/delegates?status=${encodeURIComponent(status)}`,
+        ),
       decideDelegate: (delegateId: string, decision: "approve" | "reject") =>
         request<{ id: string; status: string }>(`/api/ops/admin/delegates/${delegateId}/decision`, {
           method: "POST",
           body: JSON.stringify({ decision }),
         }),
       freezeAccount: (userId: string, freeze: boolean, reason?: string) =>
-        request<{ user_id: string; freeze: boolean; reason?: string }>(`/api/ops/admin/accounts/${userId}/freeze`, {
-          method: "POST",
-          body: JSON.stringify({ freeze, reason }),
-        }),
+        request<{ user_id: string; freeze: boolean; reason?: string }>(
+          `/api/ops/admin/accounts/${userId}/freeze`,
+          {
+            method: "POST",
+            body: JSON.stringify({ freeze, reason }),
+          },
+        ),
       listTeachers: () => request<LocalUser[]>("/api/ops/admin/teachers"),
       createTeacher: (payload: { full_name: string; email: string; password?: string }) =>
         request<{ id: string }>("/api/ops/admin/teachers", {
           method: "POST",
           body: JSON.stringify(payload),
         }),
-      updateTeacher: (teacherId: string, payload: { full_name?: string; email?: string; is_active?: boolean }) =>
+      updateTeacher: (
+        teacherId: string,
+        payload: { full_name?: string; email?: string; is_active?: boolean },
+      ) =>
         request<{ id: string; updated: boolean }>(`/api/ops/admin/teachers/${teacherId}`, {
           method: "PUT",
           body: JSON.stringify(payload),
         }),
       deactivateTeacher: (teacherId: string) =>
-        request<{ id: string; active: boolean }>(`/api/ops/admin/teachers/${teacherId}/deactivate`, {
-          method: "POST",
-        }),
-      audit: (params: { actorId?: string; action?: string; from?: string; to?: string; page?: number; pageSize?: number }) => {
+        request<{ id: string; active: boolean }>(
+          `/api/ops/admin/teachers/${teacherId}/deactivate`,
+          {
+            method: "POST",
+          },
+        ),
+      audit: (params: {
+        actorId?: string;
+        action?: string;
+        from?: string;
+        to?: string;
+        page?: number;
+        pageSize?: number;
+      }) => {
         const search = new URLSearchParams();
         if (params.actorId) search.set("actorId", params.actorId);
         if (params.action) search.set("action", params.action);
@@ -373,7 +411,9 @@ export const localApi = {
         if (params.to) search.set("to", params.to);
         if (params.page) search.set("page", String(params.page));
         if (params.pageSize) search.set("pageSize", String(params.pageSize));
-        return request<{ page: number; pageSize: number; rows: AuditEntry[] }>(`/api/ops/admin/audit?${search.toString()}`);
+        return request<{ page: number; pageSize: number; rows: AuditEntry[] }>(
+          `/api/ops/admin/audit?${search.toString()}`,
+        );
       },
     },
     teacher: {
@@ -409,11 +449,15 @@ export const localApi = {
         }),
     },
     parent: {
+      dashboard: () => request<ParentDashboardOverview>("/api/ops/parent/dashboard"),
       homeworkFeed: () => request<HomeworkItem[]>("/api/ops/parent/homework"),
       markHomeworkRead: (homeworkId: string) =>
-        request<{ homework_id: string; read: boolean }>(`/api/ops/parent/homework/${homeworkId}/read`, {
-          method: "POST",
-        }),
+        request<{ homework_id: string; read: boolean }>(
+          `/api/ops/parent/homework/${homeworkId}/read`,
+          {
+            method: "POST",
+          },
+        ),
       notifications: () => request<NotificationItem[]>("/api/ops/parent/notifications"),
       createDelegate: (payload: { delegate_name: string; phone: string; relationship: string }) =>
         request<{ id: string; status: string }>("/api/ops/parent/delegates", {
@@ -421,10 +465,13 @@ export const localApi = {
           body: JSON.stringify(payload),
         }),
       reportAbsence: (payload: { child_id: string; attendance_date?: string; reason?: string }) =>
-        request<{ child_id: string; attendance_date: string; status: string }>("/api/ops/parent/absence", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }),
+        request<{ child_id: string; attendance_date: string; status: string }>(
+          "/api/ops/parent/absence",
+          {
+            method: "POST",
+            body: JSON.stringify(payload),
+          },
+        ),
       requestDeletion: (payload: { reason?: string }) =>
         request<{ id: string; status: string }>("/api/ops/parent/deletion-request", {
           method: "POST",

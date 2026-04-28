@@ -21,7 +21,8 @@ export const enterChildModeThunk = createAsyncThunk(
   async (args: { childId: string }, { rejectWithValue }) => {
     try {
       const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
-      const token = localStorage.getItem("guardian-link-access-token") || localStorage.getItem("auth_token");
+      const token =
+        localStorage.getItem("guardian-link-access-token") || localStorage.getItem("auth_token");
       const response = await fetch(`${apiBaseUrl}/api/parents/me/child-mode/enter`, {
         method: "POST",
         headers: {
@@ -48,7 +49,8 @@ export const exitChildModeThunk = createAsyncThunk(
   async (password: string, { rejectWithValue }) => {
     try {
       const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
-      const token = localStorage.getItem("guardian-link-access-token") || localStorage.getItem("auth_token");
+      const token =
+        localStorage.getItem("guardian-link-access-token") || localStorage.getItem("auth_token");
       const response = await fetch(`${apiBaseUrl}/api/parents/me/child-mode/exit`, {
         method: "POST",
         headers: {

@@ -40,7 +40,7 @@ export const fetchAudit = createAsyncThunk(
           headers: {
             Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -66,7 +66,7 @@ export const appendAudit = createAsyncThunk(
           headers: {
             Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -75,7 +75,9 @@ export const appendAudit = createAsyncThunk(
 
       return await response.json();
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : "Failed to load more audit logs");
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Failed to load more audit logs",
+      );
     }
   },
 );

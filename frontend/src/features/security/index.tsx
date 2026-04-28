@@ -19,7 +19,9 @@ export default function SecurityDashboard() {
     msg: string;
   } | null>(null);
   const [otp, setOtp] = useState("");
-  const [rejectedLogs, setRejectedLogs] = useState<Array<{ id: string; created_at: string; action: string; target: string | null }>>([]);
+  const [rejectedLogs, setRejectedLogs] = useState<
+    Array<{ id: string; created_at: string; action: string; target: string | null }>
+  >([]);
 
   useEffect(() => {
     (async () => {
@@ -27,7 +29,9 @@ export default function SecurityDashboard() {
         const logs = await localApi.audit.list(100);
         setRejectedLogs(
           logs
-            .filter((row) => row.action.includes("rejected") || row.action.includes("gate.rejected"))
+            .filter(
+              (row) => row.action.includes("rejected") || row.action.includes("gate.rejected"),
+            )
             .slice(0, 20),
         );
       } catch {
@@ -40,7 +44,12 @@ export default function SecurityDashboard() {
     async (code: string) => {
       if (!user || !profile?.school_id) return;
       const res = await dispatch(
-        verifyToken({ code, userId: user.id, schoolId: profile.school_id, verdict: "approve" }) as any
+        verifyToken({
+          code,
+          userId: user.id,
+          schoolId: profile.school_id,
+          verdict: "approve",
+        }) as any,
       );
 
       if (res.meta.requestStatus === "fulfilled") {
@@ -74,13 +83,13 @@ export default function SecurityDashboard() {
         await localApi.audit.create({ action: "gate.rejected", target: "invalid_qr" });
       }
     },
-    [dispatch, user, profile?.school_id]
+    [dispatch, user, profile?.school_id],
   );
 
   const verifyOtp = async (v: "approve" | "reject") => {
     if (!user || !profile?.school_id || !otp) return;
     const res = await dispatch(
-      verifyToken({ otp, userId: user.id, schoolId: profile.school_id, verdict: v }) as any
+      verifyToken({ otp, userId: user.id, schoolId: profile.school_id, verdict: v }) as any,
     );
 
     if (res.meta.requestStatus === "fulfilled") {
@@ -89,12 +98,18 @@ export default function SecurityDashboard() {
         setVerdict({ ok: true, child: t.child?.full_name, msg: "APPROVED" });
         setFailCount(0);
         toast.success("✓ Approved");
-        await localApi.audit.create({ action: "gate.approved", target: t.child?.full_name ?? "unknown" });
+        await localApi.audit.create({
+          action: "gate.approved",
+          target: t.child?.full_name ?? "unknown",
+        });
       } else {
         setFailCount((f) => f + 1);
         setVerdict({ ok: false, msg: `DENIED (${t.status})` });
         toast.error("✗ Denied");
-        await localApi.audit.create({ action: "gate.rejected", target: t.child?.full_name ?? "unknown" });
+        await localApi.audit.create({
+          action: "gate.rejected",
+          target: t.child?.full_name ?? "unknown",
+        });
       }
       setOtp("");
     } else {
@@ -126,13 +141,13 @@ export default function SecurityDashboard() {
                 <X className="h-12 w-12 text-destructive" />
               )}
             </div>
-            <div className={`text-3xl font-bold ${verdict.ok ? "text-success" : "text-destructive"}`}>
+            <div
+              className={`text-3xl font-bold ${verdict.ok ? "text-success" : "text-destructive"}`}
+            >
               {verdict.msg}
             </div>
             {verdict.child && (
-              <div className="mt-2 font-semibold text-foreground">
-                {verdict.child}
-              </div>
+              <div className="mt-2 font-semibold text-foreground">{verdict.child}</div>
             )}
           </div>
         )}
@@ -176,10 +191,17 @@ export default function SecurityDashboard() {
               Unauthorized attempt log
             </div>
             <div className="max-h-48 space-y-1 overflow-auto pr-1 text-xs">
-              {rejectedLogs.length === 0 && <div className="text-muted-foreground">No rejected scans logged.</div>}
+              {rejectedLogs.length === 0 && (
+                <div className="text-muted-foreground">No rejected scans logged.</div>
+              )}
               {rejectedLogs.map((log) => (
-                <div key={log.id} className="flex items-center justify-between border-b border-border/40 py-1 last:border-0">
-                  <span className="text-muted-foreground">{new Date(log.created_at).toLocaleTimeString()}</span>
+                <div
+                  key={log.id}
+                  className="flex items-center justify-between border-b border-border/40 py-1 last:border-0"
+                >
+                  <span className="text-muted-foreground">
+                    {new Date(log.created_at).toLocaleTimeString()}
+                  </span>
                   <span className="text-destructive">{log.action}</span>
                   <span>{log.target ?? "n/a"}</span>
                 </div>

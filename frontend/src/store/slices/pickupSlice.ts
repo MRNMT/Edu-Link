@@ -22,7 +22,13 @@ interface PickupState {
   verifying: boolean;
   error: string | null;
 }
-const initialState: PickupState = { tokens: [], generating: false, fetching: false, verifying: false, error: null };
+const initialState: PickupState = {
+  tokens: [],
+  generating: false,
+  fetching: false,
+  verifying: false,
+  error: null,
+};
 
 export const generatePickupToken = createAsyncThunk(
   "pickup/generate",
@@ -36,7 +42,9 @@ export const generatePickupToken = createAsyncThunk(
     const frozenAt = state.auth?.profile?.frozen_at;
     if (frozenAt) {
       const reason = state.auth?.profile?.frozen_reason;
-      return rejectWithValue(reason ? `Account frozen: ${reason}` : "Account frozen by school admin");
+      return rejectWithValue(
+        reason ? `Account frozen: ${reason}` : "Account frozen by school admin",
+      );
     }
 
     const expires = new Date(Date.now() + 30 * 60 * 1000).toISOString();
@@ -67,7 +75,9 @@ export const fetchSchoolTokens = createAsyncThunk(
     try {
       return (await localApi.passes.school(schoolId)) as PickupToken[];
     } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : "Failed to fetch school tokens");
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Failed to fetch school tokens",
+      );
     }
   },
 );
@@ -75,7 +85,13 @@ export const fetchSchoolTokens = createAsyncThunk(
 export const verifyToken = createAsyncThunk(
   "pickup/verify",
   async (
-    args: { code?: string; otp?: string; userId: string; schoolId: string; verdict: "approve" | "reject" },
+    args: {
+      code?: string;
+      otp?: string;
+      userId: string;
+      schoolId: string;
+      verdict: "approve" | "reject";
+    },
     { rejectWithValue },
   ) => {
     try {

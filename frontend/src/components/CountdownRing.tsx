@@ -30,9 +30,19 @@ export function CountdownRing({ expiresAt, size = 56 }: Props) {
       : "var(--color-success)";
 
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+    <div
+      className="relative inline-flex items-center justify-center"
+      style={{ width: size, height: size }}
+    >
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} stroke="var(--color-border)" strokeWidth="3" fill="none" />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          stroke="var(--color-border)"
+          strokeWidth="3"
+          fill="none"
+        />
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -45,8 +55,13 @@ export function CountdownRing({ expiresAt, size = 56 }: Props) {
           style={{ transition: "stroke-dasharray 1s linear, stroke 0.3s" }}
         />
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center font-mono text-[10px] font-semibold tabular-nums" style={{ color }}>
-        {expired ? "00:00" : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`}
+      <div
+        className="absolute inset-0 flex items-center justify-center font-mono text-[10px] font-semibold tabular-nums"
+        style={{ color }}
+      >
+        {expired
+          ? "00:00"
+          : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`}
       </div>
     </div>
   );

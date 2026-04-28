@@ -10,7 +10,16 @@ import {
   type QuizReviewMode,
   type QuizSummary,
 } from "@/lib/localApi";
-import { Check, X, ClipboardCheck, BookOpen, CalendarDays, ListChecks, Plus, Trash2 } from "lucide-react";
+import {
+  Check,
+  X,
+  ClipboardCheck,
+  BookOpen,
+  CalendarDays,
+  ListChecks,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -87,13 +96,24 @@ export default function TeacherDashboard() {
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
   const [loadingQuizzes, setLoadingQuizzes] = useState(false);
   const [savingQuiz, setSavingQuiz] = useState(false);
-  const [homeworkDraft, setHomeworkDraft] = useState({ class_name: "", title: "", description: "", due_date: "", attachment_url: "" });
-  const [alertDraft, setAlertDraft] = useState({ class_name: "", title: "", message: "", priority: "medium" as "low" | "medium" | "high" | "critical" });
+  const [homeworkDraft, setHomeworkDraft] = useState({
+    class_name: "",
+    title: "",
+    description: "",
+    due_date: "",
+    attachment_url: "",
+  });
+  const [alertDraft, setAlertDraft] = useState({
+    class_name: "",
+    title: "",
+    message: "",
+    priority: "medium" as "low" | "medium" | "high" | "critical",
+  });
   const [homeworkList, setHomeworkList] = useState<any[]>([]);
 
-  const classOptions = Array.from(new Set(children.map((child) => child.class_name).filter(Boolean))).sort(
-    (left, right) => left.localeCompare(right),
-  );
+  const classOptions = Array.from(
+    new Set(children.map((child) => child.class_name).filter(Boolean)),
+  ).sort((left, right) => left.localeCompare(right));
 
   useEffect(() => {
     const sid = profile?.school_id;
@@ -124,7 +144,7 @@ export default function TeacherDashboard() {
     if (!user || !profile?.school_id) return;
     const entries = children.map((child) => ({
       child_id: child.id,
-      status: present[child.id] ? "present" as const : "absent" as const,
+      status: present[child.id] ? ("present" as const) : ("absent" as const),
     }));
     await localApi.ops.teacher.submitAttendanceBatch({
       attendance_date: new Date().toISOString().slice(0, 10),
@@ -141,7 +161,13 @@ export default function TeacherDashboard() {
     try {
       await localApi.ops.teacher.postHomework(homeworkDraft);
       toast.success("Homework posted and parents notified");
-      setHomeworkDraft({ class_name: "", title: "", description: "", due_date: "", attachment_url: "" });
+      setHomeworkDraft({
+        class_name: "",
+        title: "",
+        description: "",
+        due_date: "",
+        attachment_url: "",
+      });
       const postedHomework = await localApi.ops.teacher.listHomework();
       setHomeworkList(postedHomework);
     } catch (error) {
@@ -164,12 +190,20 @@ export default function TeacherDashboard() {
     async (code: string) => {
       if (!user || !profile?.school_id) return;
       const res = await dispatch(
-        verifyToken({ code, userId: user.id, schoolId: profile.school_id, verdict: "approve" }) as any,
+        verifyToken({
+          code,
+          userId: user.id,
+          schoolId: profile.school_id,
+          verdict: "approve",
+        }) as any,
       );
       if (res.meta.requestStatus === "fulfilled") {
         const t = res.payload as { status: string; child?: { full_name: string } };
         if (t.status === "used") {
-          setLastVerdict({ ok: true, msg: `✓ Pickup approved for ${t.child?.full_name ?? "child"}` });
+          setLastVerdict({
+            ok: true,
+            msg: `✓ Pickup approved for ${t.child?.full_name ?? "child"}`,
+          });
           toast.success(`Approved · ${t.child?.full_name}`);
         } else {
           setLastVerdict({ ok: false, msg: `✗ Token ${t.status.toUpperCase()}` });
@@ -192,7 +226,8 @@ export default function TeacherDashboard() {
       const t = res.payload as { status: string; child?: { full_name: string } };
       setLastVerdict({
         ok: t.status === "used",
-        msg: t.status === "used" ? `✓ Approved ${t.child?.full_name}` : `✗ ${t.status.toUpperCase()}`,
+        msg:
+          t.status === "used" ? `✓ Approved ${t.child?.full_name}` : `✗ ${t.status.toUpperCase()}`,
       });
       toast[t.status === "used" ? "success" : "error"](`OTP ${t.status}`);
       setOtp("");
@@ -211,7 +246,11 @@ export default function TeacherDashboard() {
     }));
   };
 
-  const updateDraftOption = (questionIndex: number, optionIndex: number, patch: Partial<DraftOption>) => {
+  const updateDraftOption = (
+    questionIndex: number,
+    optionIndex: number,
+    patch: Partial<DraftOption>,
+  ) => {
     setDraft((current) => ({
       ...current,
       questions: current.questions.map((question, index) => {
@@ -339,15 +378,17 @@ export default function TeacherDashboard() {
         class_name: draft.class_name.trim(),
         due_date: draft.due_date || null,
         review_mode: draft.review_mode,
-        questions: draft.questions.map((question): QuizCreateQuestionInput => ({
-          prompt: question.prompt.trim(),
-          options: question.options
-            .filter((option) => option.text.trim().length > 0)
-            .map((option) => ({
-              text: option.text.trim(),
-              is_correct: option.is_correct,
-            })),
-        })),
+        questions: draft.questions.map(
+          (question): QuizCreateQuestionInput => ({
+            prompt: question.prompt.trim(),
+            options: question.options
+              .filter((option) => option.text.trim().length > 0)
+              .map((option) => ({
+                text: option.text.trim(),
+                is_correct: option.is_correct,
+              })),
+          }),
+        ),
       };
 
       const saved = editingQuizId
@@ -362,7 +403,11 @@ export default function TeacherDashboard() {
       });
 
       resetQuizDraft();
-      toast.success(editingQuizId ? `Quiz updated for ${saved.class_name}` : `Quiz posted for ${saved.class_name}`);
+      toast.success(
+        editingQuizId
+          ? `Quiz updated for ${saved.class_name}`
+          : `Quiz posted for ${saved.class_name}`,
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to create quiz");
     } finally {
@@ -404,7 +449,9 @@ export default function TeacherDashboard() {
                   <input
                     type="checkbox"
                     checked={!!present[child.id]}
-                    onChange={(event) => setPresent((current) => ({ ...current, [child.id]: event.target.checked }))}
+                    onChange={(event) =>
+                      setPresent((current) => ({ ...current, [child.id]: event.target.checked }))
+                    }
                     className="h-5 w-5 accent-primary"
                   />
                 </label>
@@ -473,7 +520,9 @@ export default function TeacherDashboard() {
                     <span className="font-mono text-muted-foreground">
                       {new Date(token.created_at).toLocaleTimeString()}
                     </span>
-                    <span className={token.status === "used" ? "text-success" : "text-muted-foreground"}>
+                    <span
+                      className={token.status === "used" ? "text-success" : "text-muted-foreground"}
+                    >
                       {token.child?.full_name}
                     </span>
                   </div>
@@ -486,9 +535,12 @@ export default function TeacherDashboard() {
         <section className="panel p-5">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold">{editingQuizId ? "Edit Quiz" : "Quiz Builder"}</h2>
+              <h2 className="text-lg font-semibold">
+                {editingQuizId ? "Edit Quiz" : "Quiz Builder"}
+              </h2>
               <p className="text-xs text-muted-foreground">
-                Create or edit multiple-choice quizzes and control what learners can review after submitting.
+                Create or edit multiple-choice quizzes and control what learners can review after
+                submitting.
               </p>
             </div>
             <span className="pill-status pill-info">{quizzes.length} posted</span>
@@ -503,7 +555,9 @@ export default function TeacherDashboard() {
                   </div>
                   <Input
                     value={draft.title}
-                    onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, title: event.target.value }))
+                    }
                     placeholder="Math warm-up"
                   />
                 </label>
@@ -514,7 +568,9 @@ export default function TeacherDashboard() {
                   <Input
                     list="teacher-class-options"
                     value={draft.class_name}
-                    onChange={(event) => setDraft((current) => ({ ...current, class_name: event.target.value }))}
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, class_name: event.target.value }))
+                    }
                     placeholder="4A"
                   />
                   <datalist id="teacher-class-options">
@@ -552,7 +608,9 @@ export default function TeacherDashboard() {
                   <Input
                     type="date"
                     value={draft.due_date}
-                    onChange={(event) => setDraft((current) => ({ ...current, due_date: event.target.value }))}
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, due_date: event.target.value }))
+                    }
                   />
                 </label>
                 <label className="space-y-2">
@@ -562,7 +620,10 @@ export default function TeacherDashboard() {
                   <select
                     value={draft.review_mode}
                     onChange={(event) =>
-                      setDraft((current) => ({ ...current, review_mode: event.target.value as QuizReviewMode }))
+                      setDraft((current) => ({
+                        ...current,
+                        review_mode: event.target.value as QuizReviewMode,
+                      }))
                     }
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm"
                   >
@@ -582,7 +643,9 @@ export default function TeacherDashboard() {
                   </div>
                   <Textarea
                     value={draft.description}
-                    onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+                    onChange={(event) =>
+                      setDraft((current) => ({ ...current, description: event.target.value }))
+                    }
                     placeholder="Optional quiz instructions or context"
                     rows={3}
                   />
@@ -595,7 +658,9 @@ export default function TeacherDashboard() {
                     <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                       Questions
                     </div>
-                    <div className="text-sm text-muted-foreground">Mark one answer as correct for each question.</div>
+                    <div className="text-sm text-muted-foreground">
+                      Mark one answer as correct for each question.
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -609,7 +674,10 @@ export default function TeacherDashboard() {
 
                 <div className="space-y-4">
                   {draft.questions.map((question, questionIndex) => (
-                    <div key={questionIndex} className="rounded-xl border border-border bg-panel-elevated p-4">
+                    <div
+                      key={questionIndex}
+                      className="rounded-xl border border-border bg-panel-elevated p-4"
+                    >
                       <div className="flex items-center justify-between gap-3">
                         <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                           Question {questionIndex + 1}
@@ -628,20 +696,27 @@ export default function TeacherDashboard() {
                       <div className="mt-3 space-y-3">
                         <Input
                           value={question.prompt}
-                          onChange={(event) => updateDraftQuestion(questionIndex, { prompt: event.target.value })}
+                          onChange={(event) =>
+                            updateDraftQuestion(questionIndex, { prompt: event.target.value })
+                          }
                           placeholder="What is 2 + 2?"
                         />
 
                         <div className="grid gap-2 md:grid-cols-2">
                           {question.options.map((option, optionIndex) => (
-                            <div key={optionIndex} className="rounded-lg border border-border bg-background p-3">
+                            <div
+                              key={optionIndex}
+                              className="rounded-lg border border-border bg-background p-3"
+                            >
                               <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                                 Option {optionIndex + 1}
                               </div>
                               <Input
                                 value={option.text}
                                 onChange={(event) =>
-                                  updateDraftOption(questionIndex, optionIndex, { text: event.target.value })
+                                  updateDraftOption(questionIndex, optionIndex, {
+                                    text: event.target.value,
+                                  })
                                 }
                                 placeholder={`Answer ${optionIndex + 1}`}
                                 className="mt-2"
@@ -691,9 +766,12 @@ export default function TeacherDashboard() {
                 <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                   Learner visibility
                 </div>
-                <div className="mt-2 text-sm font-medium">Quizzes appear in child mode for matching class names.</div>
+                <div className="mt-2 text-sm font-medium">
+                  Quizzes appear in child mode for matching class names.
+                </div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Learners see the quiz as soon as it is posted and can answer it from the restricted device view.
+                  Learners see the quiz as soon as it is posted and can answer it from the
+                  restricted device view.
                 </p>
               </div>
 
@@ -713,7 +791,10 @@ export default function TeacherDashboard() {
                   </div>
                 ) : (
                   quizzes.map((quiz) => (
-                    <div key={quiz.id} className="rounded-xl border border-border bg-panel-elevated p-4">
+                    <div
+                      key={quiz.id}
+                      className="rounded-xl border border-border bg-panel-elevated p-4"
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="font-semibold">{quiz.title}</div>
@@ -722,7 +803,9 @@ export default function TeacherDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="pill-status pill-info">{quiz.attempt_count} attempts</span>
+                          <span className="pill-status pill-info">
+                            {quiz.attempt_count} attempts
+                          </span>
                           <button
                             type="button"
                             disabled={savingQuiz}
@@ -733,7 +816,9 @@ export default function TeacherDashboard() {
                           </button>
                         </div>
                       </div>
-                      {quiz.description && <p className="mt-3 text-sm text-muted-foreground">{quiz.description}</p>}
+                      {quiz.description && (
+                        <p className="mt-3 text-sm text-muted-foreground">{quiz.description}</p>
+                      )}
                       <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                         <span>Due {quiz.due_date || "not set"}</span>
                         <span>{REVIEW_MODE_LABEL[quiz.review_mode]}</span>
@@ -750,20 +835,58 @@ export default function TeacherDashboard() {
           <div className="panel p-5">
             <h2 className="mb-3 text-lg font-semibold">Homework Posting</h2>
             <form onSubmit={submitHomework} className="grid gap-2">
-              <input className="rounded-md border border-border bg-input px-3 py-2" placeholder="Class" value={homeworkDraft.class_name} onChange={(e) => setHomeworkDraft((d) => ({ ...d, class_name: e.target.value }))} />
-              <input className="rounded-md border border-border bg-input px-3 py-2" placeholder="Title" value={homeworkDraft.title} onChange={(e) => setHomeworkDraft((d) => ({ ...d, title: e.target.value }))} />
-              <textarea className="rounded-md border border-border bg-input px-3 py-2" rows={3} placeholder="Description" value={homeworkDraft.description} onChange={(e) => setHomeworkDraft((d) => ({ ...d, description: e.target.value }))} />
+              <input
+                className="rounded-md border border-border bg-input px-3 py-2"
+                placeholder="Class"
+                value={homeworkDraft.class_name}
+                onChange={(e) => setHomeworkDraft((d) => ({ ...d, class_name: e.target.value }))}
+              />
+              <input
+                className="rounded-md border border-border bg-input px-3 py-2"
+                placeholder="Title"
+                value={homeworkDraft.title}
+                onChange={(e) => setHomeworkDraft((d) => ({ ...d, title: e.target.value }))}
+              />
+              <textarea
+                className="rounded-md border border-border bg-input px-3 py-2"
+                rows={3}
+                placeholder="Description"
+                value={homeworkDraft.description}
+                onChange={(e) => setHomeworkDraft((d) => ({ ...d, description: e.target.value }))}
+              />
               <div className="grid gap-2 sm:grid-cols-2">
-                <input type="date" className="rounded-md border border-border bg-input px-3 py-2" value={homeworkDraft.due_date} onChange={(e) => setHomeworkDraft((d) => ({ ...d, due_date: e.target.value }))} />
-                <input className="rounded-md border border-border bg-input px-3 py-2" placeholder="Attachment URL" value={homeworkDraft.attachment_url} onChange={(e) => setHomeworkDraft((d) => ({ ...d, attachment_url: e.target.value }))} />
+                <input
+                  type="date"
+                  className="rounded-md border border-border bg-input px-3 py-2"
+                  value={homeworkDraft.due_date}
+                  onChange={(e) => setHomeworkDraft((d) => ({ ...d, due_date: e.target.value }))}
+                />
+                <input
+                  className="rounded-md border border-border bg-input px-3 py-2"
+                  placeholder="Attachment URL"
+                  value={homeworkDraft.attachment_url}
+                  onChange={(e) =>
+                    setHomeworkDraft((d) => ({ ...d, attachment_url: e.target.value }))
+                  }
+                />
               </div>
-              <button type="submit" className="rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground">Post homework</button>
+              <button
+                type="submit"
+                className="rounded-md bg-primary px-4 py-2 text-xs font-semibold uppercase tracking-wider text-primary-foreground"
+              >
+                Post homework
+              </button>
             </form>
             <div className="mt-4 max-h-40 space-y-2 overflow-auto text-sm">
               {homeworkList.map((item) => (
-                <div key={item.id} className="rounded-md border border-border bg-panel-elevated p-2">
+                <div
+                  key={item.id}
+                  className="rounded-md border border-border bg-panel-elevated p-2"
+                >
                   <div className="font-semibold">{item.title}</div>
-                  <div className="text-xs text-muted-foreground">{item.class_name} · Reads {item.read_count ?? 0}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {item.class_name} · Reads {item.read_count ?? 0}
+                  </div>
                 </div>
               ))}
             </div>
@@ -772,16 +895,46 @@ export default function TeacherDashboard() {
           <div className="panel p-5">
             <h2 className="mb-3 text-lg font-semibold">Class Alerts</h2>
             <form onSubmit={submitAlert} className="grid gap-2">
-              <input className="rounded-md border border-border bg-input px-3 py-2" placeholder="Class" value={alertDraft.class_name} onChange={(e) => setAlertDraft((d) => ({ ...d, class_name: e.target.value }))} />
-              <input className="rounded-md border border-border bg-input px-3 py-2" placeholder="Alert title" value={alertDraft.title} onChange={(e) => setAlertDraft((d) => ({ ...d, title: e.target.value }))} />
-              <textarea className="rounded-md border border-border bg-input px-3 py-2" rows={4} placeholder="Message" value={alertDraft.message} onChange={(e) => setAlertDraft((d) => ({ ...d, message: e.target.value }))} />
-              <select className="rounded-md border border-border bg-input px-3 py-2" value={alertDraft.priority} onChange={(e) => setAlertDraft((d) => ({ ...d, priority: e.target.value as "low" | "medium" | "high" | "critical" }))}>
+              <input
+                className="rounded-md border border-border bg-input px-3 py-2"
+                placeholder="Class"
+                value={alertDraft.class_name}
+                onChange={(e) => setAlertDraft((d) => ({ ...d, class_name: e.target.value }))}
+              />
+              <input
+                className="rounded-md border border-border bg-input px-3 py-2"
+                placeholder="Alert title"
+                value={alertDraft.title}
+                onChange={(e) => setAlertDraft((d) => ({ ...d, title: e.target.value }))}
+              />
+              <textarea
+                className="rounded-md border border-border bg-input px-3 py-2"
+                rows={4}
+                placeholder="Message"
+                value={alertDraft.message}
+                onChange={(e) => setAlertDraft((d) => ({ ...d, message: e.target.value }))}
+              />
+              <select
+                className="rounded-md border border-border bg-input px-3 py-2"
+                value={alertDraft.priority}
+                onChange={(e) =>
+                  setAlertDraft((d) => ({
+                    ...d,
+                    priority: e.target.value as "low" | "medium" | "high" | "critical",
+                  }))
+                }
+              >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
                 <option value="critical">Critical</option>
               </select>
-              <button type="submit" className="rounded-md bg-warning px-4 py-2 text-xs font-semibold uppercase tracking-wider text-warning-foreground">Broadcast alert</button>
+              <button
+                type="submit"
+                className="rounded-md bg-warning px-4 py-2 text-xs font-semibold uppercase tracking-wider text-warning-foreground"
+              >
+                Broadcast alert
+              </button>
             </form>
           </div>
         </section>

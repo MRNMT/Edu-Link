@@ -1,8 +1,14 @@
 import { Construction } from "lucide-react";
 
 export function ComingSoon({
-  phase, title, features,
-}: { phase: string; title: string; features: string[] }) {
+  phase,
+  title,
+  features,
+}: {
+  phase: string;
+  title: string;
+  features: string[];
+}) {
   return (
     <div className="panel p-8">
       <div className="flex items-start gap-4">
@@ -22,10 +28,7 @@ export function ComingSoon({
 
       <div className="mt-6 grid gap-2 sm:grid-cols-2">
         {features.map((f) => (
-          <div
-            key={f}
-            className="panel-elevated flex items-start gap-2 p-3 text-sm"
-          >
+          <div key={f} className="panel-elevated flex items-start gap-2 p-3 text-sm">
             <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
             <span>{f}</span>
           </div>

@@ -48,9 +48,7 @@ export function StatusPill({ verdict, childName, timestamp }: StatusPillProps) {
         <div className={`text-2xl font-bold ${cfg.text}`}>{cfg.icon}</div>
         <div className="flex-1">
           <h4 className={`font-semibold ${cfg.text}`}>{cfg.label}</h4>
-          {childName && (
-            <p className="mt-1 text-sm text-muted-foreground">{childName}</p>
-          )}
+          {childName && <p className="mt-1 text-sm text-muted-foreground">{childName}</p>}
           {timestamp && (
             <p className="mt-2 text-xs text-muted-foreground">
               {new Date(timestamp).toLocaleTimeString()}

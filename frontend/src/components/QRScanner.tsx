@@ -13,7 +13,11 @@ export function QRScanner({ onScan, paused }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    let scanner: { start: (...a: unknown[]) => Promise<void>; stop: () => Promise<void>; clear: () => void } | null = null;
+    let scanner: {
+      start: (...a: unknown[]) => Promise<void>;
+      stop: () => Promise<void>;
+      clear: () => void;
+    } | null = null;
 
     (async () => {
       if (paused || !containerRef.current) return;
@@ -25,7 +29,16 @@ export function QRScanner({ onScan, paused }: Props) {
         scanner = new Html5Qrcode(id) as unknown as typeof scanner;
         scannerRef.current = scanner as unknown as { stop: () => Promise<void>; clear: () => void };
 
-        await (scanner as unknown as { start: (cam: unknown, cfg: unknown, ok: (t: string) => void, fail?: () => void) => Promise<void> }).start(
+        await (
+          scanner as unknown as {
+            start: (
+              cam: unknown,
+              cfg: unknown,
+              ok: (t: string) => void,
+              fail?: () => void,
+            ) => Promise<void>;
+          }
+        ).start(
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 240, height: 240 } },
           (decoded: string) => {
@@ -43,9 +56,16 @@ export function QRScanner({ onScan, paused }: Props) {
     return () => {
       cancelled = true;
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {}).finally(() => {
-          try { scannerRef.current?.clear(); } catch { /* noop */ }
-        });
+        scannerRef.current
+          .stop()
+          .catch(() => {})
+          .finally(() => {
+            try {
+              scannerRef.current?.clear();
+            } catch {
+              /* noop */
+            }
+          });
         scannerRef.current = null;
       }
     };
@@ -57,7 +77,9 @@ export function QRScanner({ onScan, paused }: Props) {
         <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           Camera scanner
         </div>
-        <div className={`pill-status ${active && !paused ? "pill-success pulse-dot" : "pill-muted"}`}>
+        <div
+          className={`pill-status ${active && !paused ? "pill-success pulse-dot" : "pill-muted"}`}
+        >
           {active && !paused ? "Live feed" : paused ? "Paused" : "Initializing"}
         </div>
       </div>
