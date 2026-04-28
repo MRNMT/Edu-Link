@@ -19,6 +19,7 @@ import { Route as AppParentRouteImport } from './routes/_app/parent'
 import { Route as AppDelegateRouteImport } from './routes/_app/delegate'
 import { Route as AppChildModeRouteImport } from './routes/_app/child-mode'
 import { Route as AppAdminRouteImport } from './routes/_app/admin'
+import { Route as AppTeacherIndexRouteImport } from './routes/_app/teacher/index'
 import { Route as AppParentIndexRouteImport } from './routes/_app/parent/index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
 import { Route as AppTeacherQuizzesRouteImport } from './routes/_app/teacher/quizzes'
@@ -93,6 +94,11 @@ const AppAdminRoute = AppAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AppRoute,
+} as any)
+const AppTeacherIndexRoute = AppTeacherIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppTeacherRoute,
 } as any)
 const AppParentIndexRoute = AppParentIndexRouteImport.update({
   id: '/',
@@ -257,6 +263,7 @@ export interface FileRoutesByFullPath {
   '/teacher/quizzes': typeof AppTeacherQuizzesRoute
   '/admin/': typeof AppAdminIndexRoute
   '/parent/': typeof AppParentIndexRoute
+  '/teacher/': typeof AppTeacherIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -265,7 +272,6 @@ export interface FileRoutesByTo {
   '/delegate': typeof AppDelegateRoute
   '/security': typeof AppSecurityRoute
   '/system': typeof AppSystemRoute
-  '/teacher': typeof AppTeacherRouteWithChildren
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/classes': typeof AppAdminClassesRoute
   '/admin/dashboard': typeof AppAdminDashboardRoute
@@ -291,6 +297,7 @@ export interface FileRoutesByTo {
   '/teacher/quizzes': typeof AppTeacherQuizzesRoute
   '/admin': typeof AppAdminIndexRoute
   '/parent': typeof AppParentIndexRoute
+  '/teacher': typeof AppTeacherIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -329,6 +336,7 @@ export interface FileRoutesById {
   '/_app/teacher/quizzes': typeof AppTeacherQuizzesRoute
   '/_app/admin/': typeof AppAdminIndexRoute
   '/_app/parent/': typeof AppParentIndexRoute
+  '/_app/teacher/': typeof AppTeacherIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -367,6 +375,7 @@ export interface FileRouteTypes {
     | '/teacher/quizzes'
     | '/admin/'
     | '/parent/'
+    | '/teacher/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -375,7 +384,6 @@ export interface FileRouteTypes {
     | '/delegate'
     | '/security'
     | '/system'
-    | '/teacher'
     | '/admin/attendance'
     | '/admin/classes'
     | '/admin/dashboard'
@@ -401,6 +409,7 @@ export interface FileRouteTypes {
     | '/teacher/quizzes'
     | '/admin'
     | '/parent'
+    | '/teacher'
   id:
     | '__root__'
     | '/'
@@ -438,6 +447,7 @@ export interface FileRouteTypes {
     | '/_app/teacher/quizzes'
     | '/_app/admin/'
     | '/_app/parent/'
+    | '/_app/teacher/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -517,6 +527,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/teacher/': {
+      id: '/_app/teacher/'
+      path: '/'
+      fullPath: '/teacher/'
+      preLoaderRoute: typeof AppTeacherIndexRouteImport
+      parentRoute: typeof AppTeacherRoute
     }
     '/_app/parent/': {
       id: '/_app/parent/'
@@ -760,6 +777,7 @@ interface AppTeacherRouteChildren {
   AppTeacherMyClassesRoute: typeof AppTeacherMyClassesRoute
   AppTeacherParentNotificationsRoute: typeof AppTeacherParentNotificationsRoute
   AppTeacherQuizzesRoute: typeof AppTeacherQuizzesRoute
+  AppTeacherIndexRoute: typeof AppTeacherIndexRoute
 }
 
 const AppTeacherRouteChildren: AppTeacherRouteChildren = {
@@ -770,6 +788,7 @@ const AppTeacherRouteChildren: AppTeacherRouteChildren = {
   AppTeacherMyClassesRoute: AppTeacherMyClassesRoute,
   AppTeacherParentNotificationsRoute: AppTeacherParentNotificationsRoute,
   AppTeacherQuizzesRoute: AppTeacherQuizzesRoute,
+  AppTeacherIndexRoute: AppTeacherIndexRoute,
 }
 
 const AppTeacherRouteWithChildren = AppTeacherRoute._addFileChildren(

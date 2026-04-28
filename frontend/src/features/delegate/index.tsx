@@ -2,26 +2,16 @@ import { useEffect, useState } from "react";
 import { useAppSelector } from "@/store";
 import { ConsoleHeader } from "@/components/ConsoleHeader";
 import { localApi } from "@/lib/localApi";
-import { QrCode, Clock, CheckCircle, AlertCircle, Copy, RefreshCw } from "lucide-react";
+import { QrCode, CheckCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { VoucherCard, DelegateVoucher } from "./VoucherCard";
+import { ChildSelector } from "./ChildSelector";
 
 interface Child {
   id: string;
   full_name: string;
   class_name: string;
   grade: string;
-}
-
-interface DelegateVoucher {
-  id: string;
-  child_id: string;
-  child_name: string;
-  code: string;
-  otp: string;
-  status: "active" | "used" | "expired" | "rejected";
-  expires_at: string;
-  created_at: string;
-  used_at: string | null;
 }
 
 export default function DelegateDashboard() {
@@ -34,7 +24,6 @@ export default function DelegateDashboard() {
   const [generating, setGenerating] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Fetch children and voucher history on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -66,7 +55,6 @@ export default function DelegateDashboard() {
     fetchData();
   }, []);
 
-  // Generate 30-minute pickup voucher
   const generateVoucher = async (child: Child) => {
     if (!user || !profile?.school_id) return;
 
@@ -93,43 +81,6 @@ export default function DelegateDashboard() {
       toast.error("Failed to generate voucher");
     } finally {
       setGenerating(false);
-    }
-  };
-
-  // Copy to clipboard helper
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied`);
-  };
-
-  // Status indicator color
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "used":
-        return "text-success bg-success/10 border-success/40";
-      case "active":
-        return "text-info bg-info/10 border-info/40";
-      case "expired":
-        return "text-muted-foreground bg-muted/10 border-muted/40";
-      case "rejected":
-        return "text-destructive bg-destructive/10 border-destructive/40";
-      default:
-        return "text-foreground bg-background border-border";
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "used":
-        return <CheckCircle className="h-4 w-4" />;
-      case "active":
-        return <QrCode className="h-4 w-4" />;
-      case "expired":
-        return <Clock className="h-4 w-4" />;
-      case "rejected":
-        return <AlertCircle className="h-4 w-4" />;
-      default:
-        return null;
     }
   };
 
@@ -190,56 +141,22 @@ export default function DelegateDashboard() {
           </div>
         </div>
 
-        {/* Generate Voucher Section */}
-        <section className="space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold">Generate Pickup Voucher</h2>
-            <p className="text-xs text-muted-foreground">
-              Select a child to create a 30-minute pickup voucher
-            </p>
-          </div>
+        <ChildSelector
+          children={children}
+          selectedChild={selectedChild}
+          onSelect={setSelectedChild}
+        />
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {children.map((child) => (
-              <button
-                key={child.id}
-                onClick={() => setSelectedChild(child)}
-                className={`panel-elevated border-2 p-4 text-left transition ${
-                  selectedChild?.id === child.id
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50"
-                }`}
-              >
-                <div className="font-semibold">{child.full_name}</div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  {child.class_name} • {child.grade}
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {selectedChild && (
-            <div className="panel p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                    Generating for
-                  </div>
-                  <div className="mt-2 font-semibold">{selectedChild.full_name}</div>
-                  <div className="text-xs text-muted-foreground">Expires in 30 minutes</div>
-                </div>
-                <button
-                  onClick={() => generateVoucher(selectedChild)}
-                  disabled={generating}
-                  className="inline-flex items-center gap-2 rounded-md bg-success px-4 py-2 text-success-foreground hover:bg-success/90 disabled:opacity-50"
-                >
-                  <QrCode className="h-4 w-4" />
-                  {generating ? "Generating..." : "Generate Voucher"}
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
+        {selectedChild && (
+          <button
+            onClick={() => generateVoucher(selectedChild)}
+            disabled={generating}
+            className="inline-flex items-center gap-2 rounded-md bg-success px-4 py-2 text-success-foreground hover:bg-success/90 disabled:opacity-50"
+          >
+            <QrCode className="h-4 w-4" />
+            {generating ? "Generating..." : "Generate Voucher"}
+          </button>
+        )}
 
         {/* Voucher History */}
         <section className="space-y-4">
@@ -256,78 +173,7 @@ export default function DelegateDashboard() {
                 No vouchers generated yet.
               </div>
             ) : (
-              vouchers.map((voucher) => (
-                <div
-                  key={voucher.id}
-                  className={`panel-elevated border-l-4 p-4 transition ${getStatusColor(voucher.status)}`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <div className="font-semibold">{voucher.child_name}</div>
-                        <div className="flex items-center gap-1 rounded-md bg-background/50 px-2 py-1 text-xs font-mono uppercase tracking-widest">
-                          {getStatusIcon(voucher.status)}
-                          {voucher.status}
-                        </div>
-                      </div>
-
-                      <div className="mt-3 space-y-2">
-                        <div>
-                          <div className="text-xs text-muted-foreground">QR Code</div>
-                          <div className="mt-1 inline-flex items-center gap-2 rounded-md bg-background/50 px-3 py-1 font-mono text-xs">
-                            {voucher.code}
-                            <button
-                              onClick={() => copyToClipboard(voucher.code, "QR code")}
-                              className="ml-2 hover:text-primary"
-                            >
-                              <Copy className="h-3 w-3" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="text-xs text-muted-foreground">OTP Fallback</div>
-                          <div className="mt-1 inline-flex items-center gap-2 rounded-md bg-background/50 px-3 py-1 font-mono text-xs tracking-widest">
-                            {voucher.otp}
-                            <button
-                              onClick={() => copyToClipboard(voucher.otp, "OTP")}
-                              className="ml-2 hover:text-primary"
-                            >
-                              <Copy className="h-3 w-3" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-3 flex gap-6 text-xs text-muted-foreground">
-                        <div>
-                          <span className="text-muted-foreground/70">Created:</span>{" "}
-                          {new Date(voucher.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground/70">Expires:</span>{" "}
-                          {new Date(voucher.expires_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </div>
-                        {voucher.used_at && (
-                          <div>
-                            <span className="text-muted-foreground/70">Used:</span>{" "}
-                            {new Date(voucher.used_at).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
+              vouchers.map((voucher) => <VoucherCard key={voucher.id} voucher={voucher} />)
             )}
           </div>
         </section>
