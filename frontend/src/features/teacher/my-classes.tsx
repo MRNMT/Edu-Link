@@ -8,6 +8,7 @@ import { Users, TrendingUp, Award } from "lucide-react";
 export default function TeacherMyClassesPage() {
   const profile = useAppSelector((s) => s.auth.profile);
   const [children, setChildren] = useState<Child[]>([]);
+  const [assignedClasses, setAssignedClasses] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
 
@@ -17,8 +18,13 @@ export default function TeacherMyClassesPage() {
     void (async () => {
       try {
         setLoading(true);
-        const schoolChildren = await localApi.children.schoolChildren(sid);
-        setChildren(schoolChildren);
+        const [schoolChildren, teacherClassRows] = await Promise.all([
+          localApi.children.schoolChildren(sid),
+          localApi.ops.teacher.classes(),
+        ]);
+        const classNames = teacherClassRows.map((entry) => entry.class_name);
+        setAssignedClasses(classNames);
+        setChildren(schoolChildren.filter((child) => classNames.includes(child.class_name)));
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to load classes");
       } finally {
@@ -28,9 +34,7 @@ export default function TeacherMyClassesPage() {
   }, [profile?.school_id]);
 
   const classes = Array.from(
-    new Map(
-      Array.from(new Set(children.map((c) => c.class_name))).map((cn) => [cn, children.filter((c) => c.class_name === cn)]),
-    ).entries(),
+    new Map(assignedClasses.map((cn) => [cn, children.filter((c) => c.class_name === cn)])).entries(),
   ).sort((a, b) => a[0].localeCompare(b[0]));
 
   const selectedClassData = classes.find(([cn]) => cn === selectedClass);

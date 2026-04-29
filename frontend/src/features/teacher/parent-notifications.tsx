@@ -26,6 +26,7 @@ export default function TeacherParentNotificationsPage() {
   const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [children, setChildren] = useState<any[]>([]);
+  const [assignedClasses, setAssignedClasses] = useState<string[]>([]);
   const [draft, setDraft] = useState({
     class_name: "",
     title: "",
@@ -33,15 +34,19 @@ export default function TeacherParentNotificationsPage() {
     type: "announcement" as const,
   });
 
-  const classOptions = Array.from(new Set(children.map((c) => c.class_name).filter(Boolean))).sort();
+  const classOptions = assignedClasses;
 
   useEffect(() => {
     const sid = profile?.school_id;
     if (!sid) return;
     void (async () => {
       try {
-        const data = await localApi.children.schoolChildren(sid);
+        const [data, teacherClassRows] = await Promise.all([
+          localApi.children.schoolChildren(sid),
+          localApi.ops.teacher.classes(),
+        ]);
         setChildren(data);
+        setAssignedClasses(teacherClassRows.map((entry) => entry.class_name));
       } catch (e) {
         console.error("Failed to load children", e);
       }

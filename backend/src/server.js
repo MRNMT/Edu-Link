@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'node:crypto';
+import nodemailer from 'nodemailer';
 import { fileURLToPath } from 'node:url';
 import pool, { query } from './db.js';
 
@@ -89,6 +91,63 @@ function parseMaybeJson(value, fallback = null) {
   }
 
   return value;
+}
+
+function generateTemporaryPassword(length = 12) {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*';
+  const bytes = crypto.randomBytes(length);
+  let out = '';
+  for (let i = 0; i < length; i += 1) {
+    out += alphabet[bytes[i] % alphabet.length];
+  }
+  return out;
+}
+
+function normalizeFullName(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ');
+}
+
+function isValidFullName(value) {
+  const name = normalizeFullName(value);
+  // Require at least two name parts and allow letters, spaces, apostrophes and hyphens.
+  if (name.split(' ').length < 2) return false;
+  return /^[A-Za-z][A-Za-z\-\' ]{1,158}$/.test(name);
+}
+
+async function sendTemporaryCredentialsEmail({ toEmail, fullName, temporaryPassword }) {
+  const emailEnabled = String(process.env.ENABLE_EMAILS || 'false').toLowerCase() === 'true';
+  if (!emailEnabled) {
+    return false;
+  }
+
+  const host = process.env.EMAIL_HOST || process.env.SMTP_HOST;
+  const port = Number(process.env.EMAIL_PORT || process.env.SMTP_PORT || 587);
+  const secure = String(process.env.EMAIL_SECURE || process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
+  const user = process.env.EMAIL_USER || process.env.SMTP_USER;
+  const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+  const from = process.env.EMAIL_FROM || process.env.SMTP_FROM || user;
+  const fromName = process.env.EMAIL_FROM_NAME || 'EduSecure-Link';
+
+  if (!host || !user || !pass || !from) {
+    throw new Error('Email settings are missing. Set EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS and EMAIL_FROM (or SMTP_* equivalents).');
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass },
+  });
+
+  await transporter.sendMail({
+    from: `${fromName} <${from}>`,
+    to: toEmail,
+    subject: 'Your EduSecure-Link temporary login credentials',
+    text: `Hello ${fullName},\n\nYour parent account has been created in EduSecure-Link.\n\nEmail: ${toEmail}\nTemporary password: ${temporaryPassword}\n\nPlease sign in and change your password immediately.\n\nRegards,\nEduSecure-Link`,
+    html: `<p>Hello ${fullName},</p><p>Your parent account has been created in <strong>EduSecure-Link</strong>.</p><p><strong>Email:</strong> ${toEmail}<br/><strong>Temporary password:</strong> ${temporaryPassword}</p><p>Please sign in and change your password immediately.</p><p>Regards,<br/>EduSecure-Link</p>`,
+  });
+
+  return true;
 }
 
 const QUIZ_REVIEW_MODES = new Set(['none', 'wrong_only', 'correct_only', 'both']);
@@ -1175,6 +1234,45 @@ app.get('/api/teachers/me/quizzes', authRequired, async (req, res) => {
     );
 
     return res.json(rows.map(mapQuizSummary));
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/teachers/me/classes', authRequired, async (req, res) => {
+  try {
+    const teacherRows = await query(
+      `SELECT id
+       FROM users
+       WHERE id = ? AND role = 'teacher'
+       LIMIT 1`,
+      [req.user.sub]
+    );
+
+    if (teacherRows.length === 0) {
+      return res.status(403).json({ error: 'Teacher role required' });
+    }
+
+    const rows = await query(
+      `SELECT class_name
+       FROM (
+         SELECT class_name FROM homework WHERE teacher_id = ?
+         UNION
+         SELECT class_name FROM quizzes WHERE teacher_id = ?
+         UNION
+         SELECT class_name FROM class_alerts WHERE created_by_user_id = ?
+         UNION
+         SELECT DISTINCT c.class_name
+         FROM attendance a
+         INNER JOIN children c ON c.id = a.child_id
+         WHERE a.recorded_by_teacher_id = ?
+       ) teacher_classes
+       WHERE class_name IS NOT NULL AND class_name <> ''
+       ORDER BY class_name ASC`,
+      [req.user.sub, req.user.sub, req.user.sub, req.user.sub]
+    );
+
+    return res.json(rows.map((row) => ({ class_name: row.class_name })));
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -2319,6 +2417,80 @@ app.post('/api/ops/admin/teachers', authRequired, async (req, res) => {
     return res.status(201).json({ id: result.insertId, full_name, email, role: 'teacher' });
   } catch (error) {
     return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/ops/admin/parents', authRequired, async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    if (!requireRoles(req, res, ['school_admin'])) return;
+    const { full_name, email } = req.body;
+    if (!full_name || !email) {
+      return res.status(400).json({ error: 'full_name and email are required' });
+    }
+
+    const normalizedFullName = normalizeFullName(full_name);
+    if (!isValidFullName(normalizedFullName)) {
+      return res.status(400).json({ error: 'Please provide a valid full name (first and last name).' });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const temporaryPassword = generateTemporaryPassword(12);
+    const passwordHash = await bcrypt.hash(temporaryPassword, 12);
+
+    await connection.beginTransaction();
+
+    const [existingRows] = await connection.execute(
+      `SELECT id FROM users WHERE email = ? LIMIT 1`,
+      [normalizedEmail]
+    );
+
+    if (existingRows.length > 0) {
+      await connection.rollback();
+      return res.status(409).json({ error: 'A user with this email already exists' });
+    }
+
+    const [insertResult] = await connection.execute(
+      `INSERT INTO users (full_name, email, password_hash, role, school_id, is_active)
+       VALUES (?, ?, ?, 'parent', ?, 1)`,
+      [normalizedFullName, normalizedEmail, passwordHash, req.user.school_id]
+    );
+
+    const credentialsEmailed = await sendTemporaryCredentialsEmail({
+      toEmail: normalizedEmail,
+      fullName: normalizedFullName,
+      temporaryPassword,
+    });
+
+    await connection.execute(
+      `INSERT INTO audit_logs (school_id, actor_id, action, target, metadata)
+       VALUES (?, ?, 'parent.created', ?, ?)`,
+      [
+        req.user.school_id,
+        req.user.sub,
+        String(insertResult.insertId),
+        JSON.stringify({ email: normalizedEmail, sent_credentials_email: credentialsEmailed }),
+      ]
+    );
+
+    await connection.commit();
+
+    return res.status(201).json({
+      id: insertResult.insertId,
+      full_name: normalizedFullName,
+      email: normalizedEmail,
+      role: 'parent',
+      credentials_emailed: credentialsEmailed,
+    });
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch {
+      // no-op
+    }
+    return res.status(500).json({ error: error.message });
+  } finally {
+    connection.release();
   }
 });
 

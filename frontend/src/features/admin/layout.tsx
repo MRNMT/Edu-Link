@@ -11,6 +11,7 @@ import {
   Users,
   CalendarCheck,
   UserRoundCheck,
+  UserPlus,
   ShieldAlert,
   BarChart3,
   type LucideIcon,
@@ -39,8 +40,11 @@ export function AdminLayout({ title, children }: AdminLayoutProps) {
     if (!profile?.school_id) return;
     void (async () => {
       try {
-        const delegates = await localApi.ops.admin.delegates("pending");
-        setStats({ pendingLinks: delegates.length });
+        const [delegates, childLinks] = await Promise.all([
+          localApi.ops.admin.delegates("pending"),
+          localApi.ops.admin.childLinkRequests("pending"),
+        ]);
+        setStats({ pendingLinks: delegates.length + childLinks.length });
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Failed to load admin sidebar data");
       }
@@ -103,6 +107,12 @@ export function AdminLayout({ title, children }: AdminLayoutProps) {
         section: "management",
       },
       {
+        to: "/admin/add-parent",
+        label: "Add Parent",
+        icon: UserPlus,
+        section: "management",
+      },
+      {
         to: "/admin/link-requests",
         label: "Link Requests",
         icon: ShieldAlert,
@@ -151,15 +161,17 @@ export async function loadAdminDashboardData(schoolId: string | null) {
       attendanceTotal: 0,
       pendingLinks: 0,
       delegates: [],
+      childLinkRequests: [],
       auditRows: [],
     };
   }
 
-  const [children, teachers, attendance, delegates, audit] = await Promise.all([
+  const [children, teachers, attendance, delegates, childLinkRequests, audit] = await Promise.all([
     localApi.children.schoolChildren(schoolId),
     localApi.ops.admin.listTeachers(),
     localApi.ops.admin.attendanceReview(todayIso),
     localApi.ops.admin.delegates("pending"),
+    localApi.ops.admin.childLinkRequests("pending"),
     localApi.ops.admin.audit({ from: todayIso, to: todayIso, page: 1, pageSize: 20 }),
   ]);
 
@@ -171,8 +183,9 @@ export async function loadAdminDashboardData(schoolId: string | null) {
     teachersCount: teachers.length,
     presentToday,
     attendanceTotal,
-    pendingLinks: delegates.length,
+    pendingLinks: delegates.length + childLinkRequests.length,
     delegates,
+    childLinkRequests,
     auditRows: audit.rows,
   };
 }

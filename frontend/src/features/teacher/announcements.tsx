@@ -1,13 +1,29 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ConsoleHeader } from "@/components/ConsoleHeader";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { localApi } from "@/lib/localApi";
+import { useAppSelector } from "@/store";
 import { toast } from "sonner";
 
 export default function TeacherAnnouncementsPage() {
+  const profile = useAppSelector((s) => s.auth.profile);
   const [draft, setDraft] = useState({ class_name: "", title: "", message: "", priority: "medium" as any });
   const [saving, setSaving] = useState(false);
+  const [assignedClasses, setAssignedClasses] = useState<string[]>([]);
+
+  useEffect(() => {
+    const sid = profile?.school_id;
+    if (!sid) return;
+    void (async () => {
+      try {
+        const classRows = await localApi.ops.teacher.classes();
+        setAssignedClasses(classRows.map((entry) => entry.class_name));
+      } catch (error) {
+        console.error("Failed to load teacher classes", error);
+      }
+    })();
+  }, [profile?.school_id]);
 
   const submitAlert = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +46,18 @@ export default function TeacherAnnouncementsPage() {
         <div className="panel p-5">
           <h3 className="text-lg font-semibold mb-3">Send class announcement</h3>
           <form onSubmit={submitAlert} className="space-y-3">
-            <Input placeholder="Class name (e.g., 4A)" value={draft.class_name} onChange={(e) => setDraft((d) => ({ ...d, class_name: e.target.value }))} />
+            <select
+              value={draft.class_name}
+              onChange={(e) => setDraft((d) => ({ ...d, class_name: e.target.value }))}
+              className="h-9 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+            >
+              <option value="">Select class...</option>
+              {assignedClasses.map((className) => (
+                <option key={className} value={className}>
+                  {className}
+                </option>
+              ))}
+            </select>
             <Input placeholder="Title" value={draft.title} onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))} />
             <Textarea rows={4} placeholder="Message" value={draft.message} onChange={(e) => setDraft((d) => ({ ...d, message: e.target.value }))} />
             <div className="flex items-center gap-2">

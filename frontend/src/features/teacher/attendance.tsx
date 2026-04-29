@@ -9,6 +9,7 @@ export default function TeacherAttendancePage() {
   const profile = useAppSelector((s) => s.auth.profile);
   const [tab, setTab] = useState<"today" | "review">("today");
   const [children, setChildren] = useState<Child[]>([]);
+  const [assignedClasses, setAssignedClasses] = useState<string[]>([]);
   const [present, setPresent] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -20,9 +21,14 @@ export default function TeacherAttendancePage() {
     void (async () => {
       try {
         setLoading(true);
-        const schoolChildren = await localApi.children.schoolChildren(sid);
-        setChildren(schoolChildren);
-        const history = await localApi.ops.teacher.reviewAttendance();
+        const [schoolChildren, teacherClassRows, history] = await Promise.all([
+          localApi.children.schoolChildren(sid),
+          localApi.ops.teacher.classes(),
+          localApi.ops.teacher.reviewAttendance(),
+        ]);
+        const classNames = teacherClassRows.map((entry) => entry.class_name);
+        setAssignedClasses(classNames);
+        setChildren(schoolChildren.filter((child) => classNames.includes(child.class_name)));
         setAttendanceHistory(history);
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to load data");
@@ -107,7 +113,9 @@ export default function TeacherAttendancePage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold">Today's Attendance · {new Date().toLocaleDateString()}</h3>
-                <p className="text-xs text-muted-foreground">One-tap roll call for your class</p>
+                <p className="text-xs text-muted-foreground">
+                  One-tap roll call for {assignedClasses.length ? `Class ${assignedClasses[0]}` : "your assigned classes"}
+                </p>
               </div>
               <span
                 className={`px-3 py-1 rounded-full text-xs font-semibold ${

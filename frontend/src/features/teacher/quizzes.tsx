@@ -15,16 +15,21 @@ export default function TeacherQuizzesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftQuiz>(createDraftQuiz());
   const [children, setChildren] = useState<any[]>([]);
+  const [assignedClasses, setAssignedClasses] = useState<string[]>([]);
 
-  const classOptions = Array.from(new Set(children.map((c) => c.class_name).filter(Boolean))).sort();
+  const classOptions = assignedClasses;
 
   useEffect(() => {
     void loadQuizzes();
     if (profile?.school_id) {
       void (async () => {
         try {
-          const data = await localApi.children.schoolChildren(profile.school_id);
+          const [data, teacherClassRows] = await Promise.all([
+            localApi.children.schoolChildren(profile.school_id),
+            localApi.ops.teacher.classes(),
+          ]);
           setChildren(data);
+          setAssignedClasses(teacherClassRows.map((entry) => entry.class_name));
         } catch (e) {
           console.error("Failed to load children", e);
         }

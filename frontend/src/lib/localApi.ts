@@ -41,6 +41,22 @@ export interface DelegateQueueItem {
   parent_name: string;
 }
 
+export interface ChildLinkRequestQueueItem {
+  id: string;
+  parent_id: string;
+  child_id: string;
+  relationship: string;
+  status: "pending" | "approved" | "rejected";
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  parent_name: string;
+  parent_email: string;
+  child_name: string;
+  class_name: string;
+  grade: string;
+}
+
 export interface AdminAttendanceClass {
   class_name: string;
   present: number;
@@ -85,6 +101,10 @@ export interface Child {
   class_name: string;
   grade: string;
   school_id: string | null;
+}
+
+export interface TeacherClass {
+  class_name: string;
 }
 
 export interface PickupToken {
@@ -373,6 +393,40 @@ export const localApi = {
     list: (limit = 30) => request<AuditEntry[]>(`/api/audit?limit=${limit}`),
   },
   ops: {
+    teacher: {
+      classes: () => request<TeacherClass[]>("/api/teachers/me/classes"),
+      reviewAttendance: () => request<any[]>("/api/teachers/me/attendance/summary"),
+      submitAttendanceBatch: (payload: {
+        attendance_date: string;
+        entries: Array<{ child_id: string; status: "present" | "absent"; reason?: string | null }>;
+      }) =>
+        request<{ attendance_date: string; count: number }>("/api/ops/teacher/attendance/batch", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }),
+      postHomework: (payload: {
+        class_name: string;
+        title: string;
+        description?: string | null;
+        due_date?: string | null;
+        attachment_url?: string | null;
+      }) =>
+        request<{ id: string }>("/api/ops/teacher/homework", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }),
+      listHomework: () => request<HomeworkItem[]>("/api/ops/teacher/homework"),
+      sendClassAlert: (payload: {
+        class_name: string;
+        title: string;
+        message: string;
+        priority?: "low" | "medium" | "high" | "critical";
+      }) =>
+        request<{ id: string }>("/api/ops/teacher/class-alerts", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }),
+    },
     admin: {
       onboardLearner: (payload: {
         child_full_name: string;
@@ -399,6 +453,18 @@ export const localApi = {
           method: "POST",
           body: JSON.stringify({ decision }),
         }),
+      childLinkRequests: (status: string = "pending") =>
+        request<ChildLinkRequestQueueItem[]>(
+          `/api/ops/admin/child-link-requests?status=${encodeURIComponent(status)}`,
+        ),
+      decideChildLinkRequest: (requestId: string, decision: "approve" | "reject") =>
+        request<{ id: string; status: string }>(
+          `/api/ops/admin/child-link-requests/${requestId}/decision`,
+          {
+            method: "POST",
+            body: JSON.stringify({ decision }),
+          },
+        ),
       freezeAccount: (userId: string, freeze: boolean, reason?: string) =>
         request<{ user_id: string; freeze: boolean; reason?: string }>(
           `/api/ops/admin/accounts/${userId}/freeze`,
@@ -410,6 +476,17 @@ export const localApi = {
       listTeachers: () => request<LocalUser[]>("/api/ops/admin/teachers"),
       createTeacher: (payload: { full_name: string; email: string; password?: string }) =>
         request<{ id: string }>("/api/ops/admin/teachers", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }),
+      createParent: (payload: { full_name: string; email: string }) =>
+        request<{
+          id: string;
+          full_name: string;
+          email: string;
+          role: "parent";
+          credentials_emailed: boolean;
+        }>("/api/ops/admin/parents", {
           method: "POST",
           body: JSON.stringify(payload),
         }),
@@ -448,38 +525,6 @@ export const localApi = {
         );
       },
     },
-    teacher: {
-      submitAttendanceBatch: (payload: {
-        attendance_date: string;
-        entries: Array<{ child_id: string; status: "present" | "absent"; reason?: string | null }>;
-      }) =>
-        request<{ attendance_date: string; count: number }>("/api/ops/teacher/attendance/batch", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }),
-      postHomework: (payload: {
-        class_name: string;
-        title: string;
-        description?: string | null;
-        due_date?: string | null;
-        attachment_url?: string | null;
-      }) =>
-        request<{ id: string }>("/api/ops/teacher/homework", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }),
-      listHomework: () => request<HomeworkItem[]>("/api/ops/teacher/homework"),
-      sendClassAlert: (payload: {
-        class_name: string;
-        title: string;
-        message: string;
-        priority?: "low" | "medium" | "high" | "critical";
-      }) =>
-        request<{ id: string }>("/api/ops/teacher/class-alerts", {
-          method: "POST",
-          body: JSON.stringify(payload),
-        }),
-    },
     parent: {
       dashboard: () => request<ParentDashboardOverview>("/api/ops/parent/dashboard"),
       attendance: () => request<ParentAttendanceRow[]>("/api/ops/parent/attendance"),
@@ -498,7 +543,7 @@ export const localApi = {
           body: JSON.stringify(payload),
         }),
       linkChild: (payload: { child_id: string; relationship?: string }) =>
-        request<{ linked: boolean; child_id: string; relationship: string }>(
+        request<{ requested: boolean; status: string; child_id: string; relationship: string }>(
           "/api/ops/parent/link-child",
           {
             method: "POST",

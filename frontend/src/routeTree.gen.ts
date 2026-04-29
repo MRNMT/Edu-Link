@@ -45,6 +45,7 @@ import { Route as AppAdminLearnersRouteImport } from './routes/_app/admin/learne
 import { Route as AppAdminDashboardRouteImport } from './routes/_app/admin/dashboard'
 import { Route as AppAdminClassesRouteImport } from './routes/_app/admin/classes'
 import { Route as AppAdminAttendanceRouteImport } from './routes/_app/admin/attendance'
+import { Route as AppAdminAddParentRouteImport } from './routes/_app/admin/add-parent'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -227,6 +228,11 @@ const AppAdminAttendanceRoute = AppAdminAttendanceRouteImport.update({
   path: '/attendance',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppAdminAddParentRoute = AppAdminAddParentRouteImport.update({
+  id: '/add-parent',
+  path: '/add-parent',
+  getParentRoute: () => AppAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/security': typeof AppSecurityRoute
   '/system': typeof AppSystemRoute
   '/teacher': typeof AppTeacherRouteWithChildren
+  '/admin/add-parent': typeof AppAdminAddParentRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/classes': typeof AppAdminClassesRoute
   '/admin/dashboard': typeof AppAdminDashboardRoute
@@ -272,6 +279,7 @@ export interface FileRoutesByTo {
   '/delegate': typeof AppDelegateRoute
   '/security': typeof AppSecurityRoute
   '/system': typeof AppSystemRoute
+  '/admin/add-parent': typeof AppAdminAddParentRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/classes': typeof AppAdminClassesRoute
   '/admin/dashboard': typeof AppAdminDashboardRoute
@@ -311,6 +319,7 @@ export interface FileRoutesById {
   '/_app/security': typeof AppSecurityRoute
   '/_app/system': typeof AppSystemRoute
   '/_app/teacher': typeof AppTeacherRouteWithChildren
+  '/_app/admin/add-parent': typeof AppAdminAddParentRoute
   '/_app/admin/attendance': typeof AppAdminAttendanceRoute
   '/_app/admin/classes': typeof AppAdminClassesRoute
   '/_app/admin/dashboard': typeof AppAdminDashboardRoute
@@ -350,6 +359,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/system'
     | '/teacher'
+    | '/admin/add-parent'
     | '/admin/attendance'
     | '/admin/classes'
     | '/admin/dashboard'
@@ -384,6 +394,7 @@ export interface FileRouteTypes {
     | '/delegate'
     | '/security'
     | '/system'
+    | '/admin/add-parent'
     | '/admin/attendance'
     | '/admin/classes'
     | '/admin/dashboard'
@@ -422,6 +433,7 @@ export interface FileRouteTypes {
     | '/_app/security'
     | '/_app/system'
     | '/_app/teacher'
+    | '/_app/admin/add-parent'
     | '/_app/admin/attendance'
     | '/_app/admin/classes'
     | '/_app/admin/dashboard'
@@ -710,10 +722,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAttendanceRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/_app/admin/add-parent': {
+      id: '/_app/admin/add-parent'
+      path: '/add-parent'
+      fullPath: '/admin/add-parent'
+      preLoaderRoute: typeof AppAdminAddParentRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
   }
 }
 
 interface AppAdminRouteChildren {
+  AppAdminAddParentRoute: typeof AppAdminAddParentRoute
   AppAdminAttendanceRoute: typeof AppAdminAttendanceRoute
   AppAdminClassesRoute: typeof AppAdminClassesRoute
   AppAdminDashboardRoute: typeof AppAdminDashboardRoute
@@ -727,6 +747,7 @@ interface AppAdminRouteChildren {
 }
 
 const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminAddParentRoute: AppAdminAddParentRoute,
   AppAdminAttendanceRoute: AppAdminAttendanceRoute,
   AppAdminClassesRoute: AppAdminClassesRoute,
   AppAdminDashboardRoute: AppAdminDashboardRoute,
