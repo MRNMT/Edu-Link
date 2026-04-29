@@ -166,14 +166,16 @@ export async function loadAdminDashboardData(schoolId: string | null) {
     };
   }
 
-  const [children, teachers, attendance, delegates, childLinkRequests, audit] = await Promise.all([
-    localApi.children.schoolChildren(schoolId),
-    localApi.ops.admin.listTeachers(),
-    localApi.ops.admin.attendanceReview(todayIso),
-    localApi.ops.admin.delegates("pending"),
-    localApi.ops.admin.childLinkRequests("pending"),
-    localApi.ops.admin.audit({ from: todayIso, to: todayIso, page: 1, pageSize: 20 }),
-  ]);
+  const promises = [
+    localApi.children.schoolChildren(schoolId).catch(e => { console.error('schoolChildren error:', e); throw e; }),
+    localApi.ops.admin.listTeachers().catch(e => { console.error('listTeachers error:', e); throw e; }),
+    localApi.ops.admin.attendanceReview(todayIso).catch(e => { console.error('attendanceReview error:', e); throw e; }),
+    localApi.ops.admin.delegates("pending").catch(e => { console.error('delegates error:', e); throw e; }),
+    localApi.ops.admin.childLinkRequests("pending").catch(e => { console.error('childLinkRequests error:', e); throw e; }),
+    localApi.ops.admin.audit({ from: todayIso, to: todayIso, page: 1, pageSize: 20 }).catch(e => { console.error('audit error:', e); throw e; }),
+  ];
+
+  const [children, teachers, attendance, delegates, childLinkRequests, audit] = await Promise.all(promises);
 
   const presentToday = attendance.classes.reduce((sum, cls) => sum + cls.present, 0);
   const attendanceTotal = attendance.classes.reduce((sum, cls) => sum + cls.total, 0);

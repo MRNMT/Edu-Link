@@ -451,6 +451,21 @@ CREATE TABLE IF NOT EXISTS deletion_requests (
     ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  otp VARCHAR(6) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_password_reset_tokens_user (user_id),
+  KEY idx_password_reset_tokens_expires (expires_at),
+  CONSTRAINT fk_password_reset_tokens_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
 -- homework_reads is the canonical table name; backend bootstrap keeps legacy installs compatible.
 
 INSERT INTO children (full_name, school_id, class_name, grade)

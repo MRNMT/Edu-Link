@@ -450,7 +450,7 @@ export const localApi = {
         child_full_name: string;
         class_name: string;
         grade: string;
-        parent_id?: string | null;
+        parent_identifier?: string | null;
         parent_invite?: { email?: string; phone?: string } | null;
         relationship?: string;
       }) =>

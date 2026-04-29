@@ -10,31 +10,29 @@ export const ROLE_EMAILS: Record<string, string> = {
 };
 
 interface LoginFormProps {
-  role: string;
   email: string;
   password: string;
   error: string | null;
   submitting: boolean;
   hydrated: boolean;
   loading: boolean;
-  onRoleChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onEmailChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onPasswordChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
+  onOpenPasswordReset: () => void;
 }
 
 export function LoginForm({
-  role,
   email,
   password,
   error,
   submitting,
   hydrated,
   loading,
-  onRoleChange,
   onEmailChange,
   onPasswordChange,
   onSubmit,
+  onOpenPasswordReset,
 }: LoginFormProps) {
   return (
     <div className="login-panel">
@@ -43,21 +41,6 @@ export function LoginForm({
         <div className="login-form-sub">Sign in to your EduSecure-Link dashboard</div>
 
         <form onSubmit={onSubmit}>
-          <div className="fgroup">
-            <label>Sign in as</label>
-            <select value={role} onChange={onRoleChange} required>
-              <option value="" disabled>
-                Select your role...
-              </option>
-              <option value="parent">Parent / Guardian</option>
-              <option value="teacher">Teacher</option>
-              <option value="admin">School Administrator</option>
-              <option value="gate">Gate Security</option>
-              <option value="delegate">Delegate Guardian</option>
-              <option value="sysadmin">System Administrator</option>
-            </select>
-          </div>
-
           <div className="fgroup">
             <label>Email Address</label>
             <input
@@ -104,7 +87,13 @@ export function LoginForm({
 
         <div className="login-foot">
           <span className="text-muted-foreground">Forgot password? </span>
-          <a href="#">Reset here</a>
+          <button
+            type="button"
+            onClick={onOpenPasswordReset}
+            className="text-blue-600 hover:text-blue-700 underline cursor-pointer"
+          >
+            Reset here
+          </button>
         </div>
       </div>
     </div>

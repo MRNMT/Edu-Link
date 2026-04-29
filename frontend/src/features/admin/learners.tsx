@@ -8,7 +8,7 @@ export default function AdminLearnersPage() {
     child_full_name: "",
     class_name: "",
     grade: "",
-    parent_id: "",
+    parent_identifier: "",
     parent_invite_email: "",
     parent_invite_phone: "",
   });
@@ -20,7 +20,7 @@ export default function AdminLearnersPage() {
         child_full_name: wizard.child_full_name,
         class_name: wizard.class_name,
         grade: wizard.grade,
-        parent_id: wizard.parent_id || null,
+        parent_identifier: wizard.parent_identifier || null,
         parent_invite:
           wizard.parent_invite_email || wizard.parent_invite_phone
             ? {
@@ -34,7 +34,7 @@ export default function AdminLearnersPage() {
         child_full_name: "",
         class_name: "",
         grade: "",
-        parent_id: "",
+        parent_identifier: "",
         parent_invite_email: "",
         parent_invite_phone: "",
       });
@@ -51,7 +51,7 @@ export default function AdminLearnersPage() {
           <input className="rounded-md border border-border bg-input px-3 py-2" placeholder="Child full name" value={wizard.child_full_name} onChange={(e) => setWizard((v) => ({ ...v, child_full_name: e.target.value }))} />
           <input className="rounded-md border border-border bg-input px-3 py-2" placeholder="Class" value={wizard.class_name} onChange={(e) => setWizard((v) => ({ ...v, class_name: e.target.value }))} />
           <input className="rounded-md border border-border bg-input px-3 py-2" placeholder="Grade" value={wizard.grade} onChange={(e) => setWizard((v) => ({ ...v, grade: e.target.value }))} />
-          <input className="rounded-md border border-border bg-input px-3 py-2" placeholder="Existing parent ID (optional)" value={wizard.parent_id} onChange={(e) => setWizard((v) => ({ ...v, parent_id: e.target.value }))} />
+          <input className="rounded-md border border-border bg-input px-3 py-2" placeholder="Parent identifier (optional)" value={wizard.parent_identifier} onChange={(e) => setWizard((v) => ({ ...v, parent_identifier: e.target.value }))} />
           <input className="rounded-md border border-border bg-input px-3 py-2" placeholder="Invite parent email (optional)" value={wizard.parent_invite_email} onChange={(e) => setWizard((v) => ({ ...v, parent_invite_email: e.target.value }))} />
           <input className="rounded-md border border-border bg-input px-3 py-2" placeholder="Invite parent phone (optional)" value={wizard.parent_invite_phone} onChange={(e) => setWizard((v) => ({ ...v, parent_invite_phone: e.target.value }))} />
           <button type="submit" className="rounded-md bg-primary px-4 py-2 text-sm font-semibold uppercase tracking-wider text-primary-foreground">

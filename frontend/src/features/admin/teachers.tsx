@@ -184,24 +184,18 @@ export default function AdminTeachersPage() {
   const createTeacher = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    const normalizedAssignments = assignments
-      .map((entry) => ({
-        class_name: entry.class_name.trim(),
-        grade_level: Number(entry.grade_level),
-      }))
-      .filter((entry) => entry.class_name.length > 0 && !isNaN(entry.grade_level));
-
-    if (normalizedAssignments.length === 0) {
-      toast.error("Please add at least one valid class assignment");
+    if (!newTeacher.full_name.trim()) {
+      toast.error("Teacher name is required");
       return;
     }
 
-    const invalidGrade = normalizedAssignments.some(
-      (entry) => !Number.isInteger(entry.grade_level) || entry.grade_level < 1 || entry.grade_level > 7,
-    );
+    if (!newTeacher.email.trim()) {
+      toast.error("Teacher email is required");
+      return;
+    }
 
-    if (invalidGrade) {
-      toast.error("All assignments must have a grade level between Grade 1 and Grade 7");
+    if (!newTeacher.teacher_id.trim()) {
+      toast.error("Teacher ID is required");
       return;
     }
 
@@ -209,18 +203,13 @@ export default function AdminTeachersPage() {
       await localApi.ops.admin.createTeacher({
         full_name: newTeacher.full_name,
         email: newTeacher.email,
-        teacher_id: newTeacher.teacher_id.trim() || undefined,
-        assignments: normalizedAssignments,
+        teacher_id: newTeacher.teacher_id.trim(),
+        assignments: [],
       });
-      toast.success("Teacher invited");
+      toast.success("Teacher created. Assign classes using the Classes button.");
       setNewTeacher({ full_name: "", email: "", teacher_id: "" });
-      setAssignments([{ class_name: "", grade_level: "" }]);
       await loadTeachers();
     } catch (error) {
-      if (!(error instanceof Error && error.message.includes("teacher_id"))) {
-        toast.error("Teacher ID is required");
-        return;
-      }
       toast.error(error instanceof Error ? error.message : "Teacher create failed");
     }
   };
@@ -277,14 +266,6 @@ export default function AdminTeachersPage() {
                         <span>
                           {entry.class_name} (Grade {entry.grade_level})
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => removeTeacherAssignment(teacher.id, entry.class_name, entry.grade_level)}
-                          className="ml-1 text-muted-foreground hover:text-foreground"
-                          title="Unassign class"
-                        >
-                          ✕
-                        </button>
                       </div>
                     ))}
                   </div>
