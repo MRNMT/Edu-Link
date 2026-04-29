@@ -114,6 +114,17 @@ function isValidFullName(value) {
   return /^[A-Za-z][A-Za-z\-\' ]{1,158}$/.test(name);
 }
 
+function parseGradeLevel(value) {
+  if (value == null) return null;
+  const text = String(value).trim();
+  if (!text) return null;
+  const match = text.match(/\d+/);
+  if (!match) return null;
+  const level = Number(match[0]);
+  if (!Number.isInteger(level)) return null;
+  return level;
+}
+
 async function sendTemporaryCredentialsEmail({ toEmail, fullName, temporaryPassword }) {
   const emailEnabled = String(process.env.ENABLE_EMAILS || 'false').toLowerCase() === 'true';
   if (!emailEnabled) {
@@ -497,6 +508,45 @@ async function ensureOperationsSchema() {
   );
 
   await query(
+    `CREATE TABLE IF NOT EXISTS classes (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      school_id BIGINT UNSIGNED NOT NULL,
+      name VARCHAR(80) NOT NULL,
+      grade_level VARCHAR(40) NOT NULL,
+      capacity INT NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      UNIQUE KEY uq_classes_school_name (school_id, name),
+      KEY idx_classes_school_id (school_id),
+      CONSTRAINT fk_classes_school_id
+        FOREIGN KEY (school_id) REFERENCES schools(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB`
+  );
+
+  await query(
+    `CREATE TABLE IF NOT EXISTS teacher_class_assignments (
+      id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+      school_id BIGINT UNSIGNED NOT NULL,
+      teacher_id BIGINT UNSIGNED NOT NULL,
+      class_name VARCHAR(80) NOT NULL,
+      grade_level TINYINT UNSIGNED NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      UNIQUE KEY uq_teacher_class_grade (teacher_id, class_name, grade_level),
+      KEY idx_teacher_class_assignments_school (school_id, class_name),
+      KEY idx_teacher_class_assignments_teacher (teacher_id),
+      CONSTRAINT fk_teacher_class_assignments_school
+        FOREIGN KEY (school_id) REFERENCES schools(id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+      CONSTRAINT fk_teacher_class_assignments_teacher
+        FOREIGN KEY (teacher_id) REFERENCES users(id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+    ) ENGINE=InnoDB`
+  );
+
+  await query(
     `CREATE TABLE IF NOT EXISTS parent_teacher_messages (
       id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
       school_id BIGINT UNSIGNED NOT NULL,
@@ -529,10 +579,13 @@ async function ensureOperationsSchema() {
     `SELECT COLUMN_NAME
      FROM information_schema.COLUMNS
      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
-       AND COLUMN_NAME IN ('frozen_at', 'frozen_by', 'frozen_reason')`
+       AND COLUMN_NAME IN ('teacher_identifier', 'frozen_at', 'frozen_by', 'frozen_reason', 'parent_identifier')`
   );
   const existingCols = new Set(usersColumns.map((row) => row.COLUMN_NAME));
 
+  if (!existingCols.has('teacher_identifier')) {
+    await query(`ALTER TABLE users ADD COLUMN teacher_identifier VARCHAR(64) NULL AFTER email`);
+  }
   if (!existingCols.has('frozen_at')) {
     await query(`ALTER TABLE users ADD COLUMN frozen_at DATETIME NULL AFTER is_active`);
   }
@@ -548,6 +601,16 @@ async function ensureOperationsSchema() {
   if (!existingCols.has('frozen_reason')) {
     await query(`ALTER TABLE users ADD COLUMN frozen_reason VARCHAR(255) NULL AFTER frozen_by`);
   }
+  if (!existingCols.has('parent_identifier')) {
+    await query(`ALTER TABLE users ADD COLUMN parent_identifier VARCHAR(64) NULL AFTER teacher_identifier`);
+  }
+
+  await query(
+    `CREATE UNIQUE INDEX uq_users_school_teacher_identifier ON users (school_id, teacher_identifier)`
+  ).catch(() => null);
+  await query(
+    `CREATE UNIQUE INDEX uq_users_school_parent_identifier ON users (school_id, parent_identifier)`
+  ).catch(() => null);
 
   const attendanceColumns = await query(
     `SELECT COLUMN_NAME
@@ -1256,6 +1319,8 @@ app.get('/api/teachers/me/classes', authRequired, async (req, res) => {
     const rows = await query(
       `SELECT class_name
        FROM (
+         SELECT class_name FROM teacher_class_assignments WHERE teacher_id = ?
+         UNION
          SELECT class_name FROM homework WHERE teacher_id = ?
          UNION
          SELECT class_name FROM quizzes WHERE teacher_id = ?
@@ -1269,7 +1334,7 @@ app.get('/api/teachers/me/classes', authRequired, async (req, res) => {
        ) teacher_classes
        WHERE class_name IS NOT NULL AND class_name <> ''
        ORDER BY class_name ASC`,
-      [req.user.sub, req.user.sub, req.user.sub, req.user.sub]
+      [req.user.sub, req.user.sub, req.user.sub, req.user.sub, req.user.sub]
     );
 
     return res.json(rows.map((row) => ({ class_name: row.class_name })));
@@ -2293,18 +2358,55 @@ app.get('/api/ops/admin/delegates', authRequired, async (req, res) => {
     if (!requireRoles(req, res, ['school_admin'])) return;
 
     const status = String(req.query.status || 'pending');
-    const rows = await query(
-      `SELECT dg.id, dg.parent_id, dg.full_name AS delegate_name, dg.phone_number AS phone,
-              dg.relationship, dg.status, dg.approved_by_admin_id AS approved_by,
-              dg.created_at, p.full_name AS parent_name
-       FROM delegated_guardians dg
-       INNER JOIN users p ON p.id = dg.parent_id
-       WHERE p.school_id = ? AND dg.status = ?
-       ORDER BY dg.created_at DESC`,
-      [req.user.school_id, status]
-    );
+    const rows =
+      status === 'all'
+        ? await query(
+            `SELECT dg.id, dg.parent_id, dg.full_name AS delegate_name, dg.phone_number AS phone,
+                    dg.relationship, dg.status, dg.approved_by_admin_id AS approved_by,
+                    dg.created_at, p.full_name AS parent_name
+             FROM delegated_guardians dg
+             INNER JOIN users p ON p.id = dg.parent_id
+             WHERE p.school_id = ?
+             ORDER BY dg.created_at DESC`,
+            [req.user.school_id]
+          )
+        : await query(
+            `SELECT dg.id, dg.parent_id, dg.full_name AS delegate_name, dg.phone_number AS phone,
+                    dg.relationship, dg.status, dg.approved_by_admin_id AS approved_by,
+                    dg.created_at, p.full_name AS parent_name
+             FROM delegated_guardians dg
+             INNER JOIN users p ON p.id = dg.parent_id
+             WHERE p.school_id = ? AND dg.status = ?
+             ORDER BY dg.created_at DESC`,
+            [req.user.school_id, status]
+          );
 
     return res.json(rows);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/ops/admin/parents', authRequired, async (req, res) => {
+  try {
+    if (!requireRoles(req, res, ['school_admin'])) return;
+
+    const rows = await query(
+      `SELECT id, full_name, email, parent_identifier AS parent_id, role, school_id,
+              is_active, frozen_at, frozen_reason, created_at
+       FROM users
+       WHERE school_id = ? AND role = 'parent'
+       ORDER BY created_at DESC`,
+      [req.user.school_id]
+    );
+
+    return res.json(rows.map((row) => ({
+      ...mapUser(row),
+      parent_id: row.parent_id,
+      frozen_at: row.frozen_at,
+      frozen_reason: row.frozen_reason,
+      is_active: Boolean(row.is_active),
+    })));
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -2380,43 +2482,154 @@ app.get('/api/ops/admin/teachers', authRequired, async (req, res) => {
     if (!requireRoles(req, res, ['school_admin'])) return;
 
     const rows = await query(
-      `SELECT id, full_name, email, role, school_id, is_active, created_at
+      `SELECT id, full_name, email, role, school_id, teacher_identifier, is_active, created_at
        FROM users
        WHERE school_id = ? AND role = 'teacher'
        ORDER BY created_at DESC`,
       [req.user.school_id]
     );
 
-    return res.json(rows.map(mapUser));
+    const assignments = await query(
+      `SELECT teacher_id, class_name, grade_level
+       FROM teacher_class_assignments
+       WHERE school_id = ?
+       ORDER BY class_name ASC, grade_level ASC`,
+      [req.user.school_id]
+    );
+
+    const byTeacher = new Map();
+    for (const row of assignments) {
+      const key = toId(row.teacher_id);
+      const list = byTeacher.get(key) || [];
+      list.push({
+        class_name: row.class_name,
+        grade_level: Number(row.grade_level),
+      });
+      byTeacher.set(key, list);
+    }
+
+    return res.json(
+      rows.map((row) => ({
+        ...mapUser(row),
+        teacher_id: row.teacher_identifier ?? null,
+        is_active: Boolean(row.is_active),
+        assignments: byTeacher.get(toId(row.id)) || [],
+      }))
+    );
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
 });
 
 app.post('/api/ops/admin/teachers', authRequired, async (req, res) => {
+  const connection = await pool.getConnection();
   try {
     if (!requireRoles(req, res, ['school_admin'])) return;
-    const { full_name, email, password = 'demo1234' } = req.body;
+    const { full_name, email, password = generateTemporaryPassword(12), teacher_id, assignments = [] } = req.body;
     if (!full_name || !email) {
       return res.status(400).json({ error: 'full_name and email are required' });
     }
 
-    const hash = await bcrypt.hash(String(password), 12);
-    const result = await query(
-      `INSERT INTO users (full_name, email, password_hash, role, school_id, is_active)
-       VALUES (?, ?, ?, 'teacher', ?, 1)`,
-      [full_name, email, hash, req.user.school_id]
+    if (!Array.isArray(assignments)) {
+      return res.status(400).json({ error: 'assignments must be an array' });
+    }
+
+    const normalizedTeacherId = teacher_id == null ? null : String(teacher_id).trim();
+    if (normalizedTeacherId && normalizedTeacherId.length > 64) {
+      return res.status(400).json({ error: 'teacher_id must be 64 characters or fewer' });
+    }
+
+    const normalizedAssignments = assignments
+      .map((entry) => ({
+        class_name: String(entry?.class_name ?? '').trim(),
+        grade_level: parseGradeLevel(entry?.grade_level ?? entry?.grade),
+      }))
+      .filter((entry) => entry.class_name);
+
+    for (const assignment of normalizedAssignments) {
+      if (assignment.grade_level == null) {
+        return res.status(400).json({ error: 'Each assigned class must have a valid grade value' });
+      }
+      if (assignment.grade_level > 7 || assignment.grade_level < 1) {
+        return res.status(400).json({ error: 'Assigned classes cannot exceed Grade 7' });
+      }
+    }
+
+    const dedupedAssignments = Array.from(
+      new Map(
+        normalizedAssignments.map((entry) => [
+          `${entry.class_name.toLowerCase()}::${entry.grade_level}`,
+          entry,
+        ])
+      ).values()
     );
 
-    await query(
+    await connection.beginTransaction();
+
+    if (normalizedTeacherId) {
+      const [teacherIdRows] = await connection.execute(
+        `SELECT id FROM users WHERE school_id = ? AND teacher_identifier = ? LIMIT 1`,
+        [req.user.school_id, normalizedTeacherId]
+      );
+      if (teacherIdRows.length > 0) {
+        await connection.rollback();
+        return res.status(409).json({ error: 'This teacher_id is already in use for this school' });
+      }
+    }
+
+    const hash = await bcrypt.hash(String(password), 12);
+
+    const [result] = await connection.execute(
+      `INSERT INTO users (full_name, email, teacher_identifier, password_hash, role, school_id, is_active)
+       VALUES (?, ?, ?, ?, 'teacher', ?, 1)`,
+      [full_name, email, normalizedTeacherId, hash, req.user.school_id]
+    );
+
+    const credentialsEmailed = await sendTemporaryCredentialsEmail({
+      toEmail: email,
+      fullName: full_name,
+      temporaryPassword: password,
+    });
+
+    for (const assignment of dedupedAssignments) {
+      await connection.execute(
+        `INSERT INTO teacher_class_assignments (school_id, teacher_id, class_name, grade_level)
+         VALUES (?, ?, ?, ?)`,
+        [req.user.school_id, result.insertId, assignment.class_name, assignment.grade_level]
+      );
+    }
+
+    await connection.execute(
       `INSERT INTO audit_logs (school_id, actor_id, action, target, metadata)
        VALUES (?, ?, 'teacher.created', ?, ?)`,
-      [req.user.school_id, req.user.sub, String(result.insertId), JSON.stringify({ email })]
+      [
+        req.user.school_id,
+        req.user.sub,
+        String(result.insertId),
+        JSON.stringify({ email, teacher_id: normalizedTeacherId, assignments: dedupedAssignments, credentials_emailed: credentialsEmailed }),
+      ]
     );
 
-    return res.status(201).json({ id: result.insertId, full_name, email, role: 'teacher' });
+    await connection.commit();
+
+    return res.status(201).json({
+      id: result.insertId,
+      full_name,
+      email,
+      teacher_id: normalizedTeacherId,
+      role: 'teacher',
+      assignments: dedupedAssignments,
+      credentials_emailed: credentialsEmailed,
+    });
   } catch (error) {
+    try {
+      await connection.rollback();
+    } catch {
+      // no-op
+    }
     return res.status(500).json({ error: error.message });
+  } finally {
+    connection.release();
   }
 });
 
@@ -2424,7 +2637,7 @@ app.post('/api/ops/admin/parents', authRequired, async (req, res) => {
   const connection = await pool.getConnection();
   try {
     if (!requireRoles(req, res, ['school_admin'])) return;
-    const { full_name, email } = req.body;
+    const { full_name, email, parent_id } = req.body;
     if (!full_name || !email) {
       return res.status(400).json({ error: 'full_name and email are required' });
     }
@@ -2435,6 +2648,11 @@ app.post('/api/ops/admin/parents', authRequired, async (req, res) => {
     }
 
     const normalizedEmail = String(email).trim().toLowerCase();
+    const normalizedParentId = parent_id == null ? null : String(parent_id).trim();
+    if (normalizedParentId && normalizedParentId.length > 64) {
+      return res.status(400).json({ error: 'parent_id must be 64 characters or fewer' });
+    }
+
     const temporaryPassword = generateTemporaryPassword(12);
     const passwordHash = await bcrypt.hash(temporaryPassword, 12);
 
@@ -2450,10 +2668,25 @@ app.post('/api/ops/admin/parents', authRequired, async (req, res) => {
       return res.status(409).json({ error: 'A user with this email already exists' });
     }
 
+    if (normalizedParentId) {
+      const [parentIdRows] = await connection.execute(
+        `SELECT id
+         FROM users
+         WHERE school_id = ? AND parent_identifier = ?
+         LIMIT 1`,
+        [req.user.school_id, normalizedParentId]
+      );
+
+      if (parentIdRows.length > 0) {
+        await connection.rollback();
+        return res.status(409).json({ error: 'This parent_id is already in use for this school' });
+      }
+    }
+
     const [insertResult] = await connection.execute(
-      `INSERT INTO users (full_name, email, password_hash, role, school_id, is_active)
-       VALUES (?, ?, ?, 'parent', ?, 1)`,
-      [normalizedFullName, normalizedEmail, passwordHash, req.user.school_id]
+      `INSERT INTO users (full_name, email, parent_identifier, password_hash, role, school_id, is_active)
+       VALUES (?, ?, ?, ?, 'parent', ?, 1)`,
+      [normalizedFullName, normalizedEmail, normalizedParentId, passwordHash, req.user.school_id]
     );
 
     const credentialsEmailed = await sendTemporaryCredentialsEmail({
@@ -2469,7 +2702,11 @@ app.post('/api/ops/admin/parents', authRequired, async (req, res) => {
         req.user.school_id,
         req.user.sub,
         String(insertResult.insertId),
-        JSON.stringify({ email: normalizedEmail, sent_credentials_email: credentialsEmailed }),
+        JSON.stringify({
+          email: normalizedEmail,
+          parent_id: normalizedParentId,
+          sent_credentials_email: credentialsEmailed,
+        }),
       ]
     );
 
@@ -2480,6 +2717,7 @@ app.post('/api/ops/admin/parents', authRequired, async (req, res) => {
       full_name: normalizedFullName,
       email: normalizedEmail,
       role: 'parent',
+      parent_id: normalizedParentId,
       credentials_emailed: credentialsEmailed,
     });
   } catch (error) {
@@ -2491,6 +2729,110 @@ app.post('/api/ops/admin/parents', authRequired, async (req, res) => {
     return res.status(500).json({ error: error.message });
   } finally {
     connection.release();
+  }
+});
+
+app.get('/api/ops/admin/classes', authRequired, async (req, res) => {
+  try {
+    if (!requireRoles(req, res, ['school_admin'])) return;
+    const rows = await query(
+      `SELECT id, name, grade_level, capacity, created_at
+       FROM classes
+       WHERE school_id = ?
+       ORDER BY name ASC`,
+      [req.user.school_id]
+    );
+    return res.status(200).json(rows);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/ops/admin/classes', authRequired, async (req, res) => {
+  try {
+    if (!requireRoles(req, res, ['school_admin'])) return;
+    const { name, grade_level, capacity } = req.body;
+    
+    if (!name || !String(name).trim()) {
+      return res.status(400).json({ error: 'Class name is required' });
+    }
+
+    if (!grade_level || !String(grade_level).trim()) {
+      return res.status(400).json({ error: 'Grade level is required' });
+    }
+
+    if (capacity === undefined || capacity === null || capacity === '') {
+      return res.status(400).json({ error: 'Capacity is required' });
+    }
+
+    const capacityNum = Number(capacity);
+    if (isNaN(capacityNum) || capacityNum < 1) {
+      return res.status(400).json({ error: 'Capacity must be a positive number' });
+    }
+
+    const normalizedName = String(name).trim();
+    if (normalizedName.length > 80) {
+      return res.status(400).json({ error: 'Class name must be 80 characters or fewer' });
+    }
+
+    const existing = await query(
+      `SELECT id FROM classes WHERE school_id = ? AND LOWER(name) = LOWER(?)`,
+      [req.user.school_id, normalizedName]
+    );
+
+    if (existing.length > 0) {
+      return res.status(409).json({ error: 'A class with this name already exists in your school' });
+    }
+
+    const result = await query(
+      `INSERT INTO classes (school_id, name, grade_level, capacity)
+       VALUES (?, ?, ?, ?)`,
+      [req.user.school_id, normalizedName, String(grade_level).trim(), capacityNum]
+    );
+
+    await query(
+      `INSERT INTO audit_logs (school_id, actor_id, action, target, metadata)
+       VALUES (?, ?, 'class.created', ?, ?)`,
+      [req.user.school_id, req.user.sub, String(result.insertId), JSON.stringify({ name: normalizedName, grade_level: String(grade_level).trim(), capacity: capacityNum })]
+    );
+
+    return res.status(201).json({
+      id: result.insertId,
+      name: normalizedName,
+      grade_level: String(grade_level).trim(),
+      capacity: capacityNum,
+      created_at: new Date().toISOString(),
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/ops/admin/classes/:classId', authRequired, async (req, res) => {
+  try {
+    if (!requireRoles(req, res, ['school_admin'])) return;
+    const { classId } = req.params;
+
+    const classRows = await query(
+      `SELECT id FROM classes WHERE school_id = ? AND id = ?`,
+      [req.user.school_id, classId]
+    );
+
+    if (!classRows || classRows.length === 0) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    await query(`DELETE FROM classes WHERE id = ?`, [classId]);
+
+    await query(
+      `INSERT INTO audit_logs (school_id, actor_id, action, target, metadata)
+       VALUES (?, ?, 'class.deleted', ?, ?)`,
+      [req.user.school_id, req.user.sub, String(classId), JSON.stringify({ deleted_at: new Date().toISOString() })]
+    );
+
+    return res.status(200).json({ id: classId, deleted: true });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -2538,6 +2880,110 @@ app.post('/api/ops/admin/teachers/:teacherId/deactivate', authRequired, async (r
     return res.json({ id: req.params.teacherId, active: false });
   } catch (error) {
     return res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/ops/admin/teachers/:teacherId/reactivate', authRequired, async (req, res) => {
+  try {
+    if (!requireRoles(req, res, ['school_admin'])) return;
+
+    await query(
+      `UPDATE users SET is_active = 1 WHERE id = ? AND school_id = ? AND role = 'teacher'`,
+      [req.params.teacherId, req.user.school_id]
+    );
+
+    await query(
+      `INSERT INTO audit_logs (school_id, actor_id, action, target, metadata)
+       VALUES (?, ?, 'teacher.reactivated', ?, '{}')`,
+      [req.user.school_id, req.user.sub, req.params.teacherId]
+    );
+
+    return res.json({ id: req.params.teacherId, active: true });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/ops/admin/teachers/:teacherId/assignments', authRequired, async (req, res) => {
+  const connection = await pool.getConnection();
+  try {
+    if (!requireRoles(req, res, ['school_admin'])) return;
+
+    const { assignments = [] } = req.body;
+
+    if (!Array.isArray(assignments)) {
+      return res.status(400).json({ error: 'assignments must be an array' });
+    }
+
+    const normalizedAssignments = assignments
+      .map((entry) => ({
+        class_name: String(entry?.class_name ?? '').trim(),
+        grade_level: parseGradeLevel(entry?.grade_level ?? entry?.grade),
+      }))
+      .filter((entry) => entry.class_name);
+
+    for (const assignment of normalizedAssignments) {
+      if (assignment.grade_level == null) {
+        return res.status(400).json({ error: 'Each assigned class must have a valid grade value' });
+      }
+      if (assignment.grade_level > 7 || assignment.grade_level < 1) {
+        return res.status(400).json({ error: 'Assigned classes cannot exceed Grade 7' });
+      }
+    }
+
+    const dedupedAssignments = Array.from(
+      new Map(
+        normalizedAssignments.map((entry) => [
+          `${entry.class_name.toLowerCase()}::${entry.grade_level}`,
+          entry,
+        ])
+      ).values()
+    );
+
+    await connection.beginTransaction();
+
+    // Delete existing assignments for this teacher
+    await connection.execute(
+      `DELETE FROM teacher_class_assignments WHERE teacher_id = ?`,
+      [req.params.teacherId]
+    );
+
+    // Insert new assignments
+    for (const assignment of dedupedAssignments) {
+      await connection.execute(
+        `INSERT INTO teacher_class_assignments (school_id, teacher_id, class_name, grade_level)
+         VALUES (?, ?, ?, ?)`,
+        [req.user.school_id, req.params.teacherId, assignment.class_name, assignment.grade_level]
+      );
+    }
+
+    await connection.execute(
+      `INSERT INTO audit_logs (school_id, actor_id, action, target, metadata)
+       VALUES (?, ?, 'teacher.assignments_updated', ?, ?)`,
+      [
+        req.user.school_id,
+        req.user.sub,
+        String(req.params.teacherId),
+        JSON.stringify({ assignments: dedupedAssignments }),
+      ]
+    );
+
+    await connection.commit();
+
+    return res.status(200).json({
+      id: req.params.teacherId,
+      assignments_updated: true,
+      assignments: dedupedAssignments,
+    });
+  } catch (error) {
+    try {
+      await connection.rollback();
+    } catch {
+      // no-op
+    }
+    return res.status(500).json({ error: error.message });
+  } finally {
+    connection.release();
   }
 });
 

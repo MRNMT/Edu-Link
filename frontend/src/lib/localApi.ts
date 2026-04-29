@@ -12,6 +12,17 @@ export interface LocalUser {
   created_at?: string;
 }
 
+export interface TeacherClassAssignment {
+  class_name: string;
+  grade_level: number;
+}
+
+export interface AdminTeacherItem extends LocalUser {
+  teacher_id?: string | null;
+  is_active?: boolean;
+  assignments?: TeacherClassAssignment[];
+}
+
 export interface LocalProfile {
   id: string;
   full_name: string;
@@ -39,6 +50,13 @@ export interface DelegateQueueItem {
   approved_by: string | null;
   created_at: string;
   parent_name: string;
+}
+
+export interface AdminParentItem extends LocalUser {
+  parent_id?: string | null;
+  is_active?: boolean;
+  frozen_at?: string | null;
+  frozen_reason?: string | null;
 }
 
 export interface ChildLinkRequestQueueItem {
@@ -473,18 +491,42 @@ export const localApi = {
             body: JSON.stringify({ freeze, reason }),
           },
         ),
-      listTeachers: () => request<LocalUser[]>("/api/ops/admin/teachers"),
-      createTeacher: (payload: { full_name: string; email: string; password?: string }) =>
-        request<{ id: string }>("/api/ops/admin/teachers", {
+      listParents: () => request<AdminParentItem[]>("/api/ops/admin/parents"),
+      listTeachers: () => request<AdminTeacherItem[]>("/api/ops/admin/teachers"),
+      listClasses: () =>
+        request<Array<{ id: string; name: string; grade_level: string; capacity: number; created_at: string }>>(
+          "/api/ops/admin/classes"
+        ),
+      createClass: (payload: { name: string; grade_level: string; capacity: number }) =>
+        request<{ id: string; name: string; grade_level: string; capacity: number; created_at: string }>(
+          "/api/ops/admin/classes",
+          {
+            method: "POST",
+            body: JSON.stringify(payload),
+          }
+        ),
+      deleteClass: (classId: string) =>
+        request<{ id: string; deleted: boolean }>(`/api/ops/admin/classes/${classId}`, {
+          method: "DELETE",
+        }),
+      createTeacher: (payload: {
+        full_name: string;
+        email: string;
+        password?: string;
+        teacher_id?: string;
+        assignments?: Array<{ class_name: string; grade_level: number }>;
+      }) =>
+        request<{ id: string; teacher_id?: string | null }>("/api/ops/admin/teachers", {
           method: "POST",
           body: JSON.stringify(payload),
         }),
-      createParent: (payload: { full_name: string; email: string }) =>
+      createParent: (payload: { full_name: string; email: string; parent_id?: string }) =>
         request<{
           id: string;
           full_name: string;
           email: string;
           role: "parent";
+          parent_id?: string | null;
           credentials_emailed: boolean;
         }>("/api/ops/admin/parents", {
           method: "POST",
@@ -503,6 +545,24 @@ export const localApi = {
           `/api/ops/admin/teachers/${teacherId}/deactivate`,
           {
             method: "POST",
+          },
+        ),
+      reactivateTeacher: (teacherId: string) =>
+        request<{ id: string; active: boolean }>(
+          `/api/ops/admin/teachers/${teacherId}/reactivate`,
+          {
+            method: "POST",
+          },
+        ),
+      updateTeacherAssignments: (
+        teacherId: string,
+        assignments: Array<{ class_name: string; grade_level: number }>,
+      ) =>
+        request<{ id: string; assignments_updated: boolean }>(
+          `/api/ops/admin/teachers/${teacherId}/assignments`,
+          {
+            method: "PUT",
+            body: JSON.stringify({ assignments }),
           },
         ),
       audit: (params: {

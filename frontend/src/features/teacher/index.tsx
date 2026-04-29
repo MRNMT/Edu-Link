@@ -1,58 +1,66 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { ConsoleHeader } from "@/components/ConsoleHeader";
-import { useAppSelector } from "@/store";
-import { localApi, type Child, type HomeworkItem, type QuizSummary, type TeacherClass } from "@/lib/localApi";
+import { useAppDispatch, useAppSelector } from "@/store";
+import { fetchSchoolTokens } from "@/store/slices/pickupSlice";
+import { localApi, type Child, type HomeworkItem, type QuizSummary } from "@/lib/localApi";
+import {
+  CheckCircle2,
+  ClipboardList,
+  FileText,
+  GraduationCap,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
-import { BookOpenText, ClipboardCheck, FileText, GraduationCap } from "lucide-react";
 
+type AttendanceState = Record<string, "present" | "absent" | undefined>;
+
+function formatDueDate(value: string | null) {
+  if (!value) return "No due date";
+  return new Date(value).toLocaleDateString([], {
+    day: "numeric",
+    month: "short",
+  });
+}
 
 export default function TeacherDashboard() {
+  const dispatch = useAppDispatch();
   const user = useAppSelector((s) => s.auth.user);
   const profile = useAppSelector((s) => s.auth.profile);
 
   const [children, setChildren] = useState<Child[]>([]);
   const [quizzes, setQuizzes] = useState<QuizSummary[]>([]);
   const [homework, setHomework] = useState<HomeworkItem[]>([]);
-  const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>([]);
-  const [presentMap, setPresentMap] = useState<Record<string, boolean>>({});
+  const [attendance, setAttendance] = useState<AttendanceState>({});
+  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [savingAttendance, setSavingAttendance] = useState(false);
 
   const classOptions = useMemo(
-    () => teacherClasses.map((entry) => entry.class_name),
-    [teacherClasses],
+    () => Array.from(new Set(children.map((child) => child.class_name).filter(Boolean))).sort(),
+    [children],
   );
-
-  const todayPresent = useMemo(
-    () => children.filter((child) => presentMap[child.id] ?? true).length,
-    [children, presentMap],
-  );
-
-  const activeAssignments = homework.slice(0, 2);
-  const attendanceRows = children.slice(0, 4);
 
   useEffect(() => {
-    const sid = profile?.school_id;
-    if (!sid) return;
+    const schoolId = profile?.school_id;
+    if (!schoolId) return;
 
-    loadDashboardData(sid);
-  }, [profile?.school_id]);
+    void dispatch(fetchSchoolTokens(schoolId));
+    void loadDashboardData(schoolId);
+  }, [profile?.school_id, dispatch]);
 
   const loadDashboardData = async (schoolId: string) => {
     try {
       setLoading(true);
-      const [schoolChildren, teacherQuizzes, teacherHomework, teacherClassRows] = await Promise.all([
+      const [schoolChildren, teacherQuizzes, teacherHomework] = await Promise.all([
         localApi.children.schoolChildren(schoolId),
         localApi.quizzes.teacherList(),
         localApi.ops.teacher.listHomework(),
-        localApi.ops.teacher.classes(),
       ]);
-      setTeacherClasses(teacherClassRows);
+      setChildren(schoolChildren);
       setQuizzes(teacherQuizzes);
       setHomework(teacherHomework);
-      const assignedClasses = new Set(teacherClassRows.map((entry) => entry.class_name));
-      const filteredChildren = schoolChildren.filter((child) => assignedClasses.has(child.class_name));
-      setChildren(filteredChildren);
-      setPresentMap(Object.fromEntries(filteredChildren.map((child, index) => [child.id, index % 13 !== 0])));
+      setAttendance({});
+      setSubmitted(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to load teacher data");
     } finally {
@@ -60,16 +68,33 @@ export default function TeacherDashboard() {
     }
   };
 
-  const presentRate = children.length ? Math.round((todayPresent / children.length) * 1000) / 10 : 0;
+  const handleAttendanceSubmit = async () => {
+    try {
+      setSavingAttendance(true);
+      await localApi.ops.teacher.submitAttendanceBatch({
+        attendance_date: new Date().toISOString().slice(0, 10),
+        entries: children.map((child) => ({
+          child_id: child.id,
+          status: attendance[child.id] === "present" ? "present" : "absent",
+        })),
+      });
+      setSubmitted(true);
+      toast.success("Attendance submitted");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to submit attendance");
+    } finally {
+      setSavingAttendance(false);
+    }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen">
         <ConsoleHeader title="Dashboard" subtitle="Dashboard" />
         <main className="mx-auto max-w-7xl px-6 py-8">
-          <div className="flex items-center justify-center py-12">
+          <div className="flex items-center justify-center py-16">
             <div className="text-center">
-              <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
+              <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
               <p className="text-sm text-muted-foreground">Loading dashboard...</p>
             </div>
           </div>
@@ -83,7 +108,7 @@ export default function TeacherDashboard() {
       <div className="min-h-screen">
         <ConsoleHeader title="Dashboard" subtitle="Dashboard" />
         <main className="mx-auto max-w-7xl px-6 py-8">
-          <div className="text-center py-12">
+          <div className="rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
             <p className="text-muted-foreground">Unable to load user data. Please try refreshing the page.</p>
           </div>
         </main>
@@ -91,117 +116,158 @@ export default function TeacherDashboard() {
     );
   }
 
+  const greetingName = user.full_name.split(" ")[0] ?? user.full_name;
+  const presentCount = children.reduce(
+    (count, child) => count + (attendance[child.id] === "present" ? 1 : 0),
+    0,
+  );
+  const attendanceRate = children.length > 0 ? Math.round((presentCount / children.length) * 100) : 0;
+  const activeHomework = homework.length;
+  const activeQuizzes = quizzes.length;
+  const topClass = classOptions[0] ?? "Class";
+
   return (
     <div className="min-h-screen">
       <ConsoleHeader title="Dashboard" subtitle="Dashboard" />
       <main className="mx-auto max-w-7xl space-y-6 px-6 py-8">
-        <section className="rounded-[1.35rem] bg-gradient-to-r from-teal-500 via-cyan-500 to-emerald-400 px-6 py-7 text-white shadow-[0_12px_40px_rgba(15,118,110,0.2)]">
-          <h1 className="text-xl font-semibold tracking-tight">Good morning, {user.full_name.split(" ")[0]}!</h1>
-          <p className="mt-1 text-sm text-white/80">{children.length} students across {classOptions.length} classes today.</p>
+        <section className="rounded-[10px] bg-gradient-to-r from-[#23b8a8] to-[#27b7a7] px-6 py-6 text-white shadow-[0_10px_28px_rgba(35,184,168,0.14)] net-bg">
+          <h1 className="text-[20px] font-semibold leading-tight">Good morning, {greetingName}!</h1>
+          <p className="mt-1 text-[13px] text-white/75">
+            {children.length} students across {classOptions.length} classes today.
+          </p>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {[
-            { title: "Total Students", value: children.length, icon: GraduationCap, accent: "bg-teal-50 text-teal-700" },
-            {
-              title: "Present Today",
-              value: todayPresent,
-              meta: `${presentRate}% rate`,
-              icon: ClipboardCheck,
-              accent: "bg-sky-50 text-sky-700",
-            },
-            { title: "Active Assignments", value: homework.length, icon: FileText, accent: "bg-amber-50 text-amber-700" },
-            { title: "Active Quizzes", value: quizzes.length, icon: BookOpenText, accent: "bg-blue-50 text-blue-700" },
-          ].map((card) => {
-            const Icon = card.icon;
-            return (
-              <article key={card.title} className="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.accent}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="mt-5 text-3xl font-semibold tracking-tight text-slate-900">{card.value}</div>
-                <div className="mt-1 text-sm font-medium text-slate-500">{card.title}</div>
-                {card.meta ? <div className="mt-2 text-xs font-semibold text-emerald-500">{card.meta}</div> : null}
-              </article>
-            );
-          })}
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard icon={GraduationCap} label="Total Students" value={children.length} tone="teal" />
+          <StatCard icon={CheckCircle2} label="Present Today" value={presentCount} subtitle={`${attendanceRate}% rate`} tone="blue" />
+          <StatCard icon={FileText} label="Active Assignments" value={activeHomework} tone="amber" />
+          <StatCard icon={ClipboardList} label="Active Quizzes" value={activeQuizzes} tone="indigo" />
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[1.35fr_1fr]">
-          <article className="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-            <div className="flex items-center justify-between gap-4">
+        <section className="grid gap-4 xl:grid-cols-5">
+          <div className="overflow-hidden rounded-[10px] border border-border bg-white shadow-[0_2px_10px_rgba(15,23,42,0.06)] xl:col-span-3">
+            <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
               <div>
-                <h2 className="text-base font-semibold text-slate-900">Today&apos;s Attendance — Class 4B</h2>
-                <p className="mt-1 text-xs text-slate-500">Quick roll call with immediate present/absent status.</p>
+                <h2 className="text-[15px] font-semibold text-navy">Today&apos;s Attendance — {topClass}</h2>
+                <p className="text-xs text-muted-foreground">Mark present or absent, then submit the roll call.</p>
               </div>
-              <button className="rounded-full bg-teal-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-teal-600">
-                Mark Attendance
+              <button
+                onClick={() => void handleAttendanceSubmit()}
+                disabled={savingAttendance || submitted}
+                className="btn btn-primary btn-sm disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                {submitted ? "Submitted" : savingAttendance ? "Saving..." : "Mark Attendance"}
               </button>
             </div>
 
-            <div className="mt-5 divide-y divide-slate-200 rounded-2xl border border-slate-200">
-              {attendanceRows.map((child, index) => {
-                const isPresent = presentMap[child.id] ?? true;
-                return (
-                  <div key={child.id} className="flex items-center justify-between gap-3 px-4 py-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700">
-                        {child.full_name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="text-sm font-semibold text-slate-900">{child.full_name}</div>
-                        <div className="text-xs text-slate-500">Class {child.class_name}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setPresentMap((current) => ({ ...current, [child.id]: true }))}
-                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${isPresent ? "bg-emerald-500 text-white" : "border border-emerald-200 bg-emerald-50 text-emerald-700"}`}
-                      >
-                        Present
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPresentMap((current) => ({ ...current, [child.id]: false }))}
-                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${!isPresent ? "bg-rose-500 text-white" : "border border-rose-200 bg-rose-50 text-rose-600"}`}
-                      >
-                        Absent
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </article>
-
-          <article className="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-            <h2 className="text-base font-semibold text-slate-900">Active Assignments</h2>
-            <div className="mt-5 space-y-3">
-              {activeAssignments.length === 0 ? (
-                <div className="rounded-2xl border border-slate-200 px-4 py-5 text-sm text-slate-500">No homework posted yet.</div>
+            <div className="max-h-[330px] divide-y divide-border/60 overflow-auto">
+              {children.length === 0 ? (
+                <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+                  No learners available yet.
+                </div>
               ) : (
-                activeAssignments.map((item, index) => (
-                  <div key={item.id} className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 px-4 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${index === 0 ? "bg-teal-50 text-teal-700" : "bg-blue-50 text-blue-700"}`}>
-                        <FileText className="h-5 w-5" />
+                children.map((child, index) => {
+                  const state = attendance[child.id];
+                  return (
+                    <div key={child.id} className="flex items-center justify-between gap-4 px-5 py-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-6 text-[12px] font-semibold text-navy/90 flex items-center justify-center">{String.fromCharCode(76 + (index % 4))}</div>
+                        <div>
+                          <div className="text-[13px] font-semibold text-navy">{child.full_name}</div>
+                          <div className="text-[11px] text-muted-foreground">{String.fromCharCode(65 + (index % 26))} · {child.class_name}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-sm font-semibold text-slate-900">{item.title}</div>
-                        <div className="text-xs text-slate-500">Due {item.due_date ?? "—"} · {item.class_name}</div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setAttendance((current) => ({ ...current, [child.id]: "present" }))}
+                          className={`btn btn-sm ${state === "present" ? "btn-green" : "btn-outline text-[#1aa66d]"}`}
+                        >
+                          Present
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAttendance((current) => ({ ...current, [child.id]: "absent" }))}
+                          className={`btn btn-sm ${state === "absent" ? "btn-danger" : "btn-outline text-[#ef4a4a]"}`}
+                        >
+                          Absent
+                        </button>
                       </div>
                     </div>
-                    <div className={`rounded-full px-3 py-1 text-xs font-semibold ${index === 0 ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"}`}>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-[10px] border border-border bg-white shadow-[0_2px_10px_rgba(15,23,42,0.06)] xl:col-span-2">
+            <div className="flex items-center justify-between border-b border-border/60 px-5 py-4">
+              <div>
+                <h2 className="text-[15px] font-semibold text-navy">Active Assignments</h2>
+                <p className="text-xs text-muted-foreground">Upcoming work and submission progress.</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 px-5 py-4">
+              {homework.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-border bg-background/60 px-4 py-8 text-center text-sm text-muted-foreground">
+                  No homework posted yet.
+                </div>
+              ) : (
+                homework.slice(0, 2).map((item, index) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-3 rounded-[10px] border border-border bg-white px-4 py-3 shadow-sm"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-[8px] bg-[#eef6fb] text-[#496b8f]">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[13px] font-semibold text-navy">{item.title}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        Due {formatDueDate(item.due_date)} · {item.class_name}
+                      </div>
+                    </div>
+                    <div className={`rounded-full px-3 py-1 text-[11px] font-semibold border ${index === 0 ? "border-[#fde6c8] bg-[#fffaf0] text-[#f59e0b]" : "border-[#dfe9ff] bg-[#f6fbff] text-[#3b6fdc]"}`}>
                       {item.read_count ?? 0}/{children.length || 28}
                     </div>
                   </div>
                 ))
               )}
             </div>
-          </article>
+          </div>
         </section>
+
       </main>
+    </div>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  subtitle,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: number | string;
+  subtitle?: string;
+  tone: "teal" | "blue" | "amber" | "indigo";
+}) {
+  return (
+    <div className={`stat-card ${
+      tone === "teal" ? "sc-teal" : tone === "blue" ? "sc-blue" : tone === "amber" ? "sc-amber" : "sc-navy"
+    }`}>
+      <div className={`si ${tone === "teal" ? "si-teal" : tone === "blue" ? "si-blue" : tone === "amber" ? "si-amber" : "si-navy"}`}>
+        <Icon className="h-4 w-4 text-current" />
+      </div>
+      <div className="stat-num">{value}</div>
+      <div className="stat-lbl">{label}</div>
+      {subtitle && <div className="stat-note">{subtitle}</div>}
     </div>
   );
 }

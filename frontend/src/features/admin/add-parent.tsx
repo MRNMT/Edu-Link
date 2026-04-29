@@ -5,7 +5,7 @@ import { AdminLayout } from "@/features/admin/layout";
 import { localApi } from "@/lib/localApi";
 
 export default function AdminAddParentPage() {
-  const [form, setForm] = useState({ full_name: "", email: "" });
+  const [form, setForm] = useState({ full_name: "", email: "", parent_id: "" });
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async (event: React.FormEvent) => {
@@ -20,6 +20,7 @@ export default function AdminAddParentPage() {
       const result = await localApi.ops.admin.createParent({
         full_name: form.full_name.trim(),
         email: form.email.trim().toLowerCase(),
+        parent_id: form.parent_id.trim() || undefined,
       });
 
       toast.success("Parent account created", {
@@ -28,7 +29,7 @@ export default function AdminAddParentPage() {
           : "Parent account was created.",
       });
 
-      setForm({ full_name: "", email: "" });
+      setForm({ full_name: "", email: "", parent_id: "" });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to add parent");
     } finally {
@@ -52,6 +53,18 @@ export default function AdminAddParentPage() {
         </div>
 
         <form onSubmit={submit} className="max-w-xl space-y-4">
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Parent ID
+            </label>
+            <input
+              value={form.parent_id}
+              onChange={(event) => setForm((current) => ({ ...current, parent_id: event.target.value }))}
+              className="w-full rounded-md border border-border bg-input px-3 py-2"
+              placeholder="PARENT-001"
+            />
+          </div>
+
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Full Name

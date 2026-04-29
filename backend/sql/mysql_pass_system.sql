@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   full_name VARCHAR(160) NOT NULL,
   email VARCHAR(190) NOT NULL,
+  parent_identifier VARCHAR(64) NULL,
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('parent', 'teacher', 'school_admin', 'delegate', 'system_admin', 'gate_security') NOT NULL DEFAULT 'parent',
   school_id BIGINT UNSIGNED NULL,
@@ -37,10 +38,27 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email),
+  UNIQUE KEY uq_users_school_parent_identifier (school_id, parent_identifier),
   KEY idx_users_school_id (school_id),
   CONSTRAINT fk_users_school_id
     FOREIGN KEY (school_id) REFERENCES schools(id)
     ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS classes (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  school_id BIGINT UNSIGNED NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  grade_level VARCHAR(40) NOT NULL,
+  capacity INT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_classes_school_name (school_id, name),
+  KEY idx_classes_school_id (school_id),
+  CONSTRAINT fk_classes_school_id
+    FOREIGN KEY (school_id) REFERENCES schools(id)
+    ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS children (
@@ -331,6 +349,25 @@ CREATE TABLE IF NOT EXISTS class_alerts (
     ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT fk_class_alerts_created_by
     FOREIGN KEY (created_by_user_id) REFERENCES users(id)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS teacher_class_assignments (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  school_id BIGINT UNSIGNED NOT NULL,
+  teacher_id BIGINT UNSIGNED NOT NULL,
+  class_name VARCHAR(80) NOT NULL,
+  grade_level TINYINT UNSIGNED NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_teacher_class_grade (teacher_id, class_name, grade_level),
+  KEY idx_teacher_class_assignments_school (school_id, class_name),
+  KEY idx_teacher_class_assignments_teacher (teacher_id),
+  CONSTRAINT fk_teacher_class_assignments_school
+    FOREIGN KEY (school_id) REFERENCES schools(id)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT fk_teacher_class_assignments_teacher
+    FOREIGN KEY (teacher_id) REFERENCES users(id)
     ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
