@@ -119,6 +119,19 @@ export interface Child {
   class_name: string;
   grade: string;
   school_id: string | null;
+  school_name?: string;
+  student_id?: string;
+  attendance_percent?: number;
+  homework_pending?: number;
+  avg_score?: number;
+  teacher_name?: string;
+  current_status?: string;
+  linked_parents?: Array<{
+    id: string;
+    full_name: string;
+    email: string;
+    relationship: string;
+  }>;
 }
 
 export interface TeacherClass {
@@ -447,14 +460,15 @@ export const localApi = {
     },
     admin: {
       onboardLearner: (payload: {
+        child_id: string;
         child_full_name: string;
         class_name: string;
         grade: string;
-        parent_identifier?: string | null;
+        parent_identifier: string;
         parent_invite?: { email?: string; phone?: string } | null;
         relationship?: string;
       }) =>
-        request<{ id: string }>("/api/ops/admin/children/onboard", {
+        request<{ id: string; child_id: string }>("/api/ops/admin/children/onboard", {
           method: "POST",
           body: JSON.stringify(payload),
         }),

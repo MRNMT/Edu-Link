@@ -11,7 +11,6 @@ import {
   Users,
   CalendarCheck,
   UserRoundCheck,
-  UserPlus,
   ShieldAlert,
   BarChart3,
   type LucideIcon,
@@ -104,12 +103,6 @@ export function AdminLayout({ title, children }: AdminLayoutProps) {
         to: "/admin/parents-guardians",
         label: "Parents & Guardians",
         icon: UserRoundCheck,
-        section: "management",
-      },
-      {
-        to: "/admin/add-parent",
-        label: "Add Parent",
-        icon: UserPlus,
         section: "management",
       },
       {
